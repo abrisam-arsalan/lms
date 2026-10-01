@@ -24,6 +24,19 @@
 
 ## 1. Setup awal server (sekali)
 
+### Jalur cepat (direkomendasikan) — dari SSH Ubuntu:
+
+```bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/abrisam-arsalan/lms/deploy/deploy/setup-server.sh)"
+# lalu bootstrap data lama:
+sudo bash /var/www/lms/deploy/bootstrap-data.sh      # dry-run dulu, konfirmasi y utk tulis
+```
+`setup-server.sh` idempoten: Node 22, swap, user deploy, clone branch `deploy`,
+DB+user+sandi acak (tersimpan di `/root/lms-kredensial.txt`), `.env`, migrate,
+systemd, nginx vhost, cek `/healthz`. **Tunnel ingress tetap manual (§6).**
+
+### Jalur manual (fallback / belajar):
+
 ```bash
 # Node 22+ (dipakai juga utk skrip bootstrap):
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
