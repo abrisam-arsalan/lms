@@ -27,3 +27,6 @@ Thumbs.db
 
 # NOTE: branch `deploy` sengaja meng-commit artefak build (scripts/deploy.sh
 # memakai `git add -f`). Aturan sekolah: push ke GitHub → server tinggal pull.
+
+# artifacts lokal
+tsconfig.tsbuildinfo
