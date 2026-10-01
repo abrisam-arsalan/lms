@@ -1,0 +1,512 @@
+// ── LMS SMP Negeri 5 Tegal ───────────────────────────────────────
+// Target: MariaDB 11.8 (instance existing sekolah). DB smp_lms, user lms_user.
+// binaryTargets: native utk dev Windows, debian utk server Ubuntu.
+// Sumber kebenaran: PRD-LMS-SMP.md §8.
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Identitas & Akun ─────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  GURU
+  SISWA
+  ORTU
+  KEPSEK
+}
+
+enum IdentityApp {
+  CBT
+  PRESENSI
+}
+
+model User {
+  id           BigInt    @id @default(autoincrement())
+  username     String    @unique @db.VarChar(64) // = NISN utk siswa (konvensi CBT & app kementerian)
+  nama         String    @db.VarChar(120)
+  email        String?   @unique @db.VarChar(191)
+  nis          String?   @unique @db.VarChar(32)
+  nisn         String?   @unique @db.VarChar(32)
+  passwordHash String    @db.VarChar(255) // bcrypt (kompatibel hash Laravel & Bun.password)
+  role         Role
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at") // soft-delete ala cbt-tka: riwayat nilai tetap utuh
+
+  teacher        Teacher?
+  student        Student?
+  identities     Identity[]
+  sessions       Session[]
+  notifications  Notification[]
+  materials      Material[]
+  tasks          Task[]
+  gradesGiven    Grade[]          @relation("GradesGiven")
+  gradesReceived Grade[]          @relation("GradesReceived")
+  submissions    Submission[]     @relation("Submissions")
+  tpScores       TpScore[]        @relation("TpScores")
+  tpFlags        TpFlag[]         @relation("TpFlags")
+  reportScores   ReportScore[]    @relation("ReportScores")
+  parentLinks    LinkParentStudent[] @relation("ParentLinks")
+  announcements  Announcement[]
+  auditLogs      AuditLog[]
+  homeroomOf     Class[]          @relation("Homeroom")
+
+  @@map("users")
+}
+
+model Identity {
+  id         BigInt      @id @default(autoincrement())
+  userId     BigInt      @map("user_id")
+  app        IdentityApp
+  externalId String      @map("external_id") @db.VarChar(64)
+  createdAt  DateTime    @default(now()) @map("created_at")
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([app, externalId])
+  @@index([userId])
+  @@map("identities")
+}
+
+model Teacher {
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @unique @map("user_id")
+  nip       String?  @unique @db.VarChar(32)
+  nama      String   @db.VarChar(120)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments Assignment[]
+
+  @@map("teachers")
+}
+
+model Student {
+  id      BigInt  @id @default(autoincrement())
+  userId  BigInt  @unique @map("user_id")
+  classId BigInt? @map("class_id")
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  class   Class?  @relation(fields: [classId], references: [id], onDelete: SetNull)
+
+  parents LinkParentStudent[]
+
+  @@map("students")
+}
+
+model LinkParentStudent {
+  parentId   BigInt   @map("parent_id")
+  studentId  BigInt   @map("student_id")
+  hubungan   String?  @db.VarChar(16) // Ayah/Ibu/Wali
+  parent     User     @relation("ParentLinks", fields: [parentId], references: [id], onDelete: Cascade)
+  studentRec Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([parentId, studentId])
+  @@map("parent_students")
+}
+
+// ── Struktur sekolah ─────────────────────────────────────────────
+
+model AcademicYear {
+  id        BigInt  @id @default(autoincrement())
+  name      String  @unique @db.VarChar(16) // "2026/2027"
+  startDate DateTime? @map("start_date")
+  endDate   DateTime? @map("end_date")
+  isActive  Boolean @default(false) @map("is_active")
+  classes   Class[]
+  semesters Semester[]
+
+  @@map("academic_years")
+}
+
+model Semester {
+  id      BigInt  @id @default(autoincrement())
+  yearId  BigInt  @map("year_id")
+  number  Int     @db.TinyInt // 1 = Ganjil, 2 = Genap
+  name    String  @db.VarChar(8)
+  year    AcademicYear @relation(fields: [yearId], references: [id])
+  assignments Assignment[]
+
+  @@unique([yearId, number])
+  @@map("semesters")
+}
+
+model Class {
+  id               BigInt   @id @default(autoincrement())
+  name             String   @db.VarChar(16) // "7A", "9F"
+  tingkat          Int      @db.TinyInt
+  academicYearId   BigInt   @map("academic_year_id")
+  homeroomUserId   BigInt?  @map("homeroom_user_id")
+  academicYear     AcademicYear @relation(fields: [academicYearId], references: [id])
+  homeroomTeacher  User?    @relation("Homeroom", fields: [homeroomUserId], references: [id], onDelete: SetNull)
+  students         Student[]
+  assignments      Assignment[]
+  announcements    Announcement[]
+
+  @@unique([name, academicYearId])
+  @@map("classes")
+}
+
+model Subject {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @unique @db.VarChar(80)
+  code        String?  @db.VarChar(16) // MTK, BIN, BIG… (konvensi presensi)
+  assignments Assignment[]
+
+  @@map("subjects")
+}
+
+// ── Spine akademik: Assignment (guru × mapel × rombel × semester) ─
+
+model Assignment {
+  id         BigInt  @id @default(autoincrement())
+  teacherId  BigInt  @map("teacher_id")
+  subjectId  BigInt  @map("subject_id")
+  classId    BigInt  @map("class_id")
+  semesterId BigInt  @map("semester_id")
+  teacher    Teacher @relation(fields: [teacherId], references: [id])
+  subject    Subject @relation(fields: [subjectId], references: [id])
+  class      Class   @relation(fields: [classId], references: [id])
+  semester   Semester @relation(fields: [semesterId], references: [id])
+
+  learningTargets LearningTarget[]
+  materials       Material[]
+  tasks           Task[]
+  manualAssessments ManualAssessment[]
+  reportScores    ReportScore[]
+  schedules       Schedule[]
+
+  @@unique([teacherId, subjectId, classId, semesterId])
+  @@index([classId, semesterId])
+  @@map("assignments")
+}
+
+// ── TP (Tujuan Pembelajaran) — jumlah & isi diset guru ───────────
+
+model LearningTarget {
+  id           BigInt     @id @default(autoincrement())
+  assignmentId BigInt     @map("assignment_id")
+  code         String     @db.VarChar(32) // "TP.9220"
+  content      String     @db.Text // isi tujuan pembelajaran
+  urutan       Int        @default(0)
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  materials Material[]
+  tasks     Task[]
+  scores    TpScore[]
+  flags     TpFlag[]
+  manualAssessments ManualAssessment[]
+
+  @@unique([assignmentId, code])
+  @@map("learning_targets")
+}
+
+enum TpScoreSource {
+  AUTO
+  MANUAL
+}
+
+model TpScore {
+  id        BigInt           @id @default(autoincrement())
+  tpId      BigInt           @map("tp_id")
+  studentId BigInt           @map("student_id") // User.id (SISWA)
+  score     Decimal          @db.Decimal(5, 2) // tingkat ketercapaian 0–100
+  source    TpScoreSource    @default(AUTO)
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  tp        LearningTarget   @relation(fields: [tpId], references: [id], onDelete: Cascade)
+  student   User             @relation("TpScores", fields: [studentId], references: [id])
+
+  @@unique([tpId, studentId])
+  @@index([studentId])
+  @@map("tp_scores")
+}
+
+enum TpFlagType {
+  PERLU_PENINGKATAN // TR
+  SANGAT_TERCAPAI   // OP
+}
+
+model TpFlag {
+  id        BigInt       @id @default(autoincrement())
+  tpId      BigInt       @map("tp_id")
+  studentId BigInt       @map("student_id")
+  type      TpFlagType
+  tp        LearningTarget @relation(fields: [tpId], references: [id], onDelete: Cascade)
+  student   User         @relation("TpFlags", fields: [studentId], references: [id])
+
+  @@unique([tpId, studentId, type])
+  @@map("tp_flags")
+}
+
+model ReportScore {
+  id           BigInt     @id @default(autoincrement())
+  assignmentId BigInt     @map("assignment_id")
+  studentId    BigInt     @map("student_id")
+  score        Decimal    @db.Decimal(5, 2) // NILAI RAPOR (agregat TP, dapat dikoreksi manual w/ audit)
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User       @relation("ReportScores", fields: [studentId], references: [id])
+
+  @@unique([assignmentId, studentId])
+  @@map("report_scores")
+}
+
+// ── Materi ───────────────────────────────────────────────────────
+
+enum PublishStatus {
+  DRAF
+  TERBIT
+}
+
+model Material {
+  id           BigInt        @id @default(autoincrement())
+  assignmentId BigInt        @map("assignment_id")
+  tpId         BigInt?       @map("tp_id")
+  judul        String        @db.VarChar(200)
+  body         String        @db.LongText
+  status       PublishStatus @default(DRAF)
+  publishAt    DateTime?     @map("publish_at") // penjadwalan tayang
+  urutan       Int           @default(0)
+  createdById  BigInt        @map("created_by")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+  assignment   Assignment    @relation(fields: [assignmentId], references: [id])
+  tp           LearningTarget? @relation(fields: [tpId], references: [id], onDelete: SetNull)
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  files        MaterialFile[]
+
+  @@index([assignmentId, status, urutan])
+  @@map("materials")
+}
+
+model MaterialFile {
+  id         BigInt   @id @default(autoincrement())
+  materialId BigInt   @map("material_id")
+  nama       String   @db.VarChar(255) // nama tampil
+  storedName String   @unique @db.VarChar(128) // nama acak di storage/
+  mime       String   @db.VarChar(120)
+  sizeBytes  BigInt   @map("size_bytes")
+  createdAt  DateTime @default(now()) @map("created_at")
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@map("material_files")
+}
+
+// ── Tugas & pengumpulan ──────────────────────────────────────────
+
+enum SubmitType {
+  FILE
+  TEKS
+  CENTANG // "sudah dikerjakan" — centang manual (buku tulis)
+}
+
+model Task {
+  id           BigInt        @id @default(autoincrement())
+  assignmentId BigInt        @map("assignment_id")
+  tpId         BigInt?       @map("tp_id")
+  judul        String        @db.VarChar(200)
+  instruksi    String        @db.LongText
+  tipe         SubmitType    @default(FILE)
+  dueAt        DateTime?     @map("due_at")
+  lateUntil    DateTime?     @map("late_until") // batas toleransi terlambat
+  maxFileMb    Int           @default(20) @map("max_file_mb")
+  status       PublishStatus @default(DRAF)
+  publishAt    DateTime?     @map("publish_at")
+  createdById  BigInt        @map("created_by")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+  assignment   Assignment    @relation(fields: [assignmentId], references: [id])
+  tp           LearningTarget? @relation(fields: [tpId], references: [id], onDelete: SetNull)
+  createdBy    User          @relation(fields: [createdById], references: [id])
+  files        TaskFile[]
+  submissions  Submission[]
+
+  @@index([assignmentId, status, dueAt])
+  @@map("tasks")
+}
+
+model TaskFile {
+  id         BigInt   @id @default(autoincrement())
+  taskId     BigInt   @map("task_id")
+  nama       String   @db.VarChar(255)
+  storedName String   @unique @db.VarChar(128)
+  mime       String   @db.VarChar(120)
+  sizeBytes  BigInt   @map("size_bytes")
+  createdAt  DateTime @default(now()) @map("created_at")
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_files")
+}
+
+enum SubmissionStatus {
+  ONTIME
+  LATE
+}
+
+model Submission {
+  id          BigInt           @id @default(autoincrement())
+  taskId      BigInt           @map("task_id")
+  studentId   BigInt           @map("student_id") // User.id
+  text        String?          @db.Text
+  status      SubmissionStatus @default(ONTIME)
+  revisiCount Int              @default(0) @map("revisi_count")
+  submittedAt DateTime         @default(now()) @map("submitted_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+  task        Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  student     User             @relation("Submissions", fields: [studentId], references: [id])
+  files       SubmissionFile[]
+  grade       Grade?
+
+  @@unique([taskId, studentId])
+  @@map("submissions")
+}
+
+model SubmissionFile {
+  id           BigInt     @id @default(autoincrement())
+  submissionId BigInt     @map("submission_id")
+  nama         String     @db.VarChar(255)
+  storedName   String     @unique @db.VarChar(128)
+  mime         String     @db.VarChar(120)
+  sizeBytes    BigInt     @map("size_bytes")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@map("submission_files")
+}
+
+// ── Asesmen & nilai ──────────────────────────────────────────────
+
+model ManualAssessment {
+  id           BigInt        @id @default(autoincrement())
+  assignmentId BigInt        @map("assignment_id")
+  tpId         BigInt?       @map("tp_id") // boleh dirujuk ke TP, boleh berdiri sendiri
+  nama         String        @db.VarChar(80) // "UH Harian 1", "Praktik", "Nilai CBT"…
+  keterangan   String?       @db.VarChar(255)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  assignment   Assignment    @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  tp           LearningTarget? @relation(fields: [tpId], references: [id], onDelete: SetNull)
+  grades       Grade[]
+
+  @@map("manual_assessments")
+}
+
+enum GradeTarget {
+  TUGAS
+  MANUAL
+}
+
+model Grade {
+  id                   BigInt        @id @default(autoincrement())
+  target               GradeTarget
+  submissionId         BigInt?       @unique @map("submission_id")
+  manualAssessmentId   BigInt?       @map("manual_assessment_id")
+  studentId            BigInt        @map("student_id")
+  score                Decimal       @db.Decimal(5, 2)
+  feedback             String?       @db.Text
+  gradedById           BigInt        @map("graded_by")
+  gradedAt             DateTime      @default(now()) @map("graded_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
+  submission           Submission?   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  manualAssessment     ManualAssessment? @relation(fields: [manualAssessmentId], references: [id], onDelete: Cascade)
+  student              User          @relation("GradesReceived", fields: [studentId], references: [id])
+  gradedBy             User          @relation("GradesGiven", fields: [gradedById], references: [id])
+
+  @@index([manualAssessmentId, studentId])
+  @@map("grades")
+}
+
+// ── Jadwal ───────────────────────────────────────────────────────
+
+model Schedule {
+  id           BigInt     @id @default(autoincrement())
+  assignmentId BigInt     @map("assignment_id")
+  day          Int        @db.TinyInt // konvensi presensi: 0=Minggu … 6=Sabtu
+  start        String     @db.VarChar(5) // "07:30"
+  end          String     @db.VarChar(5)
+  room         String?    @db.VarChar(60)
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([day])
+  @@map("schedules")
+}
+
+// ── Pengumuman & notifikasi ──────────────────────────────────────
+
+enum AnnouncementScope {
+  SEMUA
+  KELAS
+}
+
+model Announcement {
+  id        BigInt            @id @default(autoincrement())
+  judul     String            @db.VarChar(200)
+  isi       String            @db.LongText
+  target    AnnouncementScope @default(SEMUA)
+  classId   BigInt?           @map("class_id")
+  authorId  BigInt            @map("author_id")
+  createdAt DateTime          @default(now()) @map("created_at")
+  deletedAt DateTime?         @map("deleted_at")
+  class     Class?            @relation(fields: [classId], references: [id], onDelete: Cascade)
+  author    User              @relation(fields: [authorId], references: [id])
+
+  @@index([target, classId])
+  @@map("announcements")
+}
+
+model Notification {
+  id        BigInt    @id @default(autoincrement())
+  userId    BigInt    @map("user_id")
+  kind      String    @db.VarChar(40) // materi_baru, nilai_keluar, pengumuman, tugas_baru
+  message   String    @db.VarChar(255)
+  link      String?   @db.VarChar(255)
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
+}
+
+// ── Infrastruktur ────────────────────────────────────────────────
+
+model Session {
+  token     String   @id @db.VarChar(64)
+  userId    BigInt   @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model AuditLog {
+  id       BigInt   @id @default(autoincrement())
+  userId   BigInt?  @map("user_id")
+  action   String   @db.VarChar(80) // LOGIN, NILAI_UBAH, DELETE, …
+  entity   String   @db.VarChar(60)
+  entityId String?  @map("entity_id") @db.VarChar(64)
+  detail   Json?    // { lama, baru } utk perubahan nilai
+  ip       String?  @db.VarChar(45)
+  createdAt DateTime @default(now()) @map("created_at")
+  user     User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model Setting {
+  key   String @id @db.VarChar(64)
+  value String @db.VarChar(500)
+
+  @@map("settings")
+}

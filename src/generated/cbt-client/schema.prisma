@@ -1,0 +1,46 @@
+// ── Client READ-ONLY ke DB cbt_tka — khusus skrip bootstrap migrasi ──
+// Dihasilkan ke src/generated/cbt-client. Tabel dipetakan apa adanya
+// (kolom yang tidak kami baca sengaja diabaikan agar tahan perubahan app CBT).
+// Catatan RUNBOOK: lms_user butuh GRANT SELECT ON cbt_tka.* HANYA selama
+// bootstrap berjalan, lalu REVOKE.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/cbt-client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("CBT_DATABASE_URL")
+}
+
+model CbtUser {
+  id          BigInt    @id @default(autoincrement())
+  username    String    @unique @db.VarChar(64)
+  name        String    @db.VarChar(191)
+  email       String?   @unique @db.VarChar(191)
+  password    String    @db.VarChar(255)
+  role        String    @default("siswa") @db.VarChar(20)
+  classId     BigInt?   @map("class_id")
+  nisn        String?   @unique @db.VarChar(32)
+  phone       String?   @db.VarChar(32)
+  isActive    Boolean   @default(true) @map("is_active")
+  lastLoginAt DateTime? @map("last_login_at")
+  createdAt   DateTime? @map("created_at")
+  updatedAt   DateTime? @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  @@map("users")
+}
+
+model CbtClass {
+  id           BigInt    @id @default(autoincrement())
+  name         String    @db.VarChar(64)
+  grade        String?   @db.VarChar(16)
+  academicYear String?   @map("academic_year") @db.VarChar(16)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime? @map("created_at")
+  updatedAt    DateTime? @map("updated_at")
+
+  @@map("classes")
+}

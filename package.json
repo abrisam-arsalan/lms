@@ -1,0 +1,36 @@
+{
+  "name": "smp-lms",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LMS SMP Negeri 5 Tegal — inti belajar-mengajar (materi, tugas, gradebook TP, jadwal)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "prisma generate && prisma generate --schema prisma/cbt-readonly.prisma && node -e \"require('fs').rmSync('src/generated/cbt-client/.gitignore',{force:true})\"",
+    "db:deploy": "prisma migrate deploy",
+    "bootstrap": "node scripts/bootstrap.mjs"
+  },
+  "prisma": {
+    "seed": "node scripts/seed-demo.mjs"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.3.0",
+    "bcryptjs": "^2.4.3",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "prisma": "^6.3.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
