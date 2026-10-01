@@ -5,6 +5,16 @@
 
 ## 0. Prinsip & batas
 
+- **Laptop developer = Windows, server = Ubuntu.** Pembagian jalan:
+  - Semua perintah `bash scripts/deploy.sh` dst. di laptop dijalankan dari **Git Bash**
+    (PowerShell/CMD tidak — bukan masalah isi skrip, soal kenyamanan jalur).
+  - Engine Prisma Linux sudah dibundel di branch `deploy` sejak build Windows
+    (`binaryTargets=["native","debian-openssl-3.0.x"]` di schema) — server TIDAK build apa pun.
+  - Seluruh file di repo dipaksa **LF** lewat `.gitattributes` ⇒ skrip server
+    (`backup-lms.sh`, systemd ExecStart, dst.) langsung jalan tanpa `dos2unix`.
+  - SSH dari Windows: Windows Terminal / `ssh deploy@server` bawaan sudah cukup.
+- Setelah clone di server (antisipasi bit eksekusi engine, idempoten):
+  `find /var/www/lms -name "*.so.node" -exec chmod +x {} +`
 - Port internal **3005** (3000 sudah dipakai presensi). nginx tetap satu di port 80, dipilah `server_name`.
 - HTTPS diurus Cloudflare Tunnel; origin cukup listen 80.
 - DB: **MariaDB existing**, `smp_lms`, user `lms_user` (grant hanya ke `smp_lms.*`).
