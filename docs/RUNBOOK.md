@@ -25,14 +25,11 @@ sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapf
 echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab && sudo swapon -a
 free -h                 # cek Swap 2.0Gi
 
-# Deploy key utk repo privat (server hanya boleh baca):
-sudo ssh-keygen -t ed25519 -f /root/.ssh/lms-deploy -N "" -C "lms-deploy@server"
-# → tempelkan public key di GitHub repo → Settings → Deploy keys (read-only)
-
-# Checkout branch artefak:
-sudo git clone -b deploy git@github.com-abrisam-arsalan-lms-deploy:/abrisam-arsalan/lms.git /var/www/lms
-# (atau HTTPS + PAT bila lebih disukai)
+# Repo PUBLIC (abrisam-arsalan/lms) → cukup HTTPS, tanpa token/deploy key:
+sudo git clone -b deploy --depth 1 https://github.com/abrisam-arsalan/lms.git /var/www/lms
+# (branch `deploy` = artefak hasil build; `main` = source, lihat §4 update rutin)
 sudo mkdir -p /var/www/lms/storage/uploads
+sudo chown -R deploy:deploy /var/www/lms/storage
 ```
 
 ## 2. Database & .env (sekali)
