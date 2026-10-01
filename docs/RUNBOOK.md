@@ -31,17 +31,23 @@ sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/abrisam-arsalan/lms
 # lalu bootstrap data lama:
 sudo bash /var/www/lms/deploy/bootstrap-data.sh      # dry-run dulu, konfirmasi y utk tulis
 ```
-`setup-server.sh` idempoten: Node 22, swap, user deploy, clone branch `deploy`,
+`setup-server.sh` idempoten: Node ≥24 (tarball resmi — sengaja **bukan** apt, karena
+PPA php `ondrej` yang rusak bisa memblokir `apt update`), swap, user deploy, clone branch `deploy`,
 DB+user+sandi acak (tersimpan di `/root/lms-kredensial.txt`), `.env`, migrate,
 systemd, nginx vhost, cek `/healthz`. **Tunnel ingress tetap manual (§6).**
 
 ### Jalur manual (fallback / belajar):
 
 ```bash
-# Node 22+ (dipakai juga utk skrip bootstrap):
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt-get install -y nodejs
-node --version          # ≥ 22
+# Node ≥24 dari TARBALL (bukan apt). Penting: `apt update` di server ini bisa gagal
+# gara2 PPA ondrej/php 404 (Ubuntu resolute) & nodesource lama mengunci v20 tanpa
+# node:sqlite. Tarball ke /usr/local menyalip PATH tanpa menyentuh apt:
+F=node-v24.1.0-linux-x64.tar.xz   # cek https://nodejs.org/dist/latest-v24.x/ utk versi terkini
+curl -fsSLO https://nodejs.org/dist/latest-v24.x/$F
+sudo tar -xJf $F -C /usr/local/lib/nodejs 2>/dev/null || { sudo mkdir -p /usr/local/lib/nodejs; sudo tar -xJf $F -C /usr/local/lib/nodejs; }
+B=${F%.tar.xz}; sudo ln -sfn /usr/local/lib/nodejs/$B/bin/node /usr/local/bin/node
+sudo ln -sfn /usr/local/lib/nodejs/$B/bin/npm /usr/local/bin/npm; rm -f $F
+node --version          # ≥ 24 — WAJIB: node:sqlite dipakai bootstrap, tak ada di v20
 
 # Swap 2 GB bila belum ada:
 sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile && sudo mkswap /swapfile
@@ -78,12 +84,11 @@ sambungkan sementara via SSH tunnel — TIDAK diperlukan. Gunakan sqlite? Tidak.
 
 **Cara baku (di server, sekali per perubahan migrasi):**
 ```bash
-cd /var/www/lms
 # Prisma CLI di-install ke folder tools (di luar app, sekali saja):
-sudo -u deploy npm init -y --prefix /opt/lms-tools 2>/dev/null || true
-sudo -u deploy npm install --prefix /opt/lms-tools prisma@6.3.0
-# jalankan migrate (CLI membaca schema+folder migrations di /var/www/lms):
-cd /var/www/lms && sudo -u deploy sh -c 'PATH=/opt/lms-tools/node_modules/.bin:$PATH prisma migrate deploy'
+sudo npm install --prefix /opt/lms-tools prisma@6.3.0
+sudo chmod -R a+rX /opt/lms-tools   # hindari "prisma: Permission denied" saat jalan sbg deploy
+# jalankan migrate (panggil bin langsung, bukan via PATH shim):
+cd /var/www/lms && sudo bash -c 'set -a; . /var/www/lms/.env; set +a; node /opt/lms-tools/node_modules/prisma/build/index.js migrate deploy'
 ```
 
 ## 4. Update rutin (setiap rilis)
