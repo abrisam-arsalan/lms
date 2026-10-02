@@ -25,4 +25,7 @@ sudo -u deploy node --env-file="$APP/.env" "$APP/scripts-server/bootstrap.mjs"
 
 echo "▶ cabut lagi akses cbt_tka"
 mysql -e "REVOKE SELECT ON cbt_tka.* FROM 'lms_user'@'localhost'; FLUSH PRIVILEGES;" 2>/dev/null || true
-echo "✔ Bootstrap selesai. Cek hasil: login sebagai admin (username 'admin') di https://lms.smp5tegal.sch.id/admin/users"
+echo "✔ Bootstrap selesai."
+echo "  Login admin → username 'admin' dengan password Presensi-mu."
+echo "  Lupa password? reset ke bawaan skrip:"
+echo "    cd $APP && sudo -u deploy node --env-file=$APP/.env $APP/scripts-server/reset-admin.mjs"

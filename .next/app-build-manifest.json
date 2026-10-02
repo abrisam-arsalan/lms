@@ -43,19 +43,19 @@
       "static/chunks/main-app-cfa4766b2797220d.js",
       "static/chunks/app/dashboard/page-79bda57e8a9d0ac2.js"
     ],
-    "/login/page": [
-      "static/chunks/webpack-e1efe72b54df622a.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-ce8c7c75002f810b.js",
-      "static/chunks/main-app-cfa4766b2797220d.js",
-      "static/chunks/app/login/page-c02ffa92396fb57a.js"
-    ],
     "/jadwal/page": [
       "static/chunks/webpack-e1efe72b54df622a.js",
       "static/chunks/4bd1b696-c023c6e3521b1417.js",
       "static/chunks/255-ce8c7c75002f810b.js",
       "static/chunks/main-app-cfa4766b2797220d.js",
       "static/chunks/app/jadwal/page-79bda57e8a9d0ac2.js"
+    ],
+    "/login/page": [
+      "static/chunks/webpack-e1efe72b54df622a.js",
+      "static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "static/chunks/255-ce8c7c75002f810b.js",
+      "static/chunks/main-app-cfa4766b2797220d.js",
+      "static/chunks/app/login/page-c02ffa92396fb57a.js"
     ],
     "/materi/page": [
       "static/chunks/webpack-e1efe72b54df622a.js",
