@@ -4,11 +4,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "LMS SMPN 5 Tegal",
   description: "Belajar-mengajar: materi, tugas, nilai, jadwal",
+  icons: { icon: "/assets/logo.png" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#3858F8", // selaras presensi
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

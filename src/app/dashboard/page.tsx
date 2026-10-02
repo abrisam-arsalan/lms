@@ -28,41 +28,48 @@ export default async function DashboardPage() {
       : Promise.resolve(0),
   ]);
   const totalUser = counts.reduce((s, c) => s + c._count._all, 0);
+  const initials = user.nama.split(/[\s,.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
   return (
     <>
-      <div className="topbar">
-        <strong>LMS SMPN 5 Tegal</strong>
-        <span className="spacer" />
-        <span>{user.nama}</span>
-        <span className="pill">{ROLE_LABEL[user.role] ?? user.role}</span>
-        <LogoutButton />
-      </div>
+      <header className="topbar">
+        <a className="brand" href="/dashboard">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="brand-logo" src="/assets/logo.png" alt="Logo" />
+          <span className="brand-text">LMS<small>SMPN 5 Tegal</small></span>
+        </a>
+        <div className="topbar-right">
+          <span className="userchip">
+            <span className="avatar">{initials}</span>
+            <span className="user-meta"><b>{user.nama}</b><small>{ROLE_LABEL[user.role] ?? user.role}</small></span>
+          </span>
+          <LogoutButton />
+        </div>
+      </header>
       <main>
-        <div className="card">
-          <h2 style={{ fontSize: "1.05rem", marginBottom: 6 }}>Selamat datang, {user.nama} 👋</h2>
+        <div className="page-head">
+          <h1>Selamat datang, {user.nama.split(",")[0]} 👋</h1>
           {user.role === "ADMIN" && (
-            <p className="muted">
-              Total akun terdaftar: <strong>{totalUser}</strong>.{" "}
-              <a href="/admin/users">Kelola akun →</a>
-            </p>
+            <p>Total akun terdaftar: <strong>{totalUser}</strong>. <a href="/admin/users">Kelola akun →</a></p>
           )}
           {user.role === "GURU" && (
-            <p className="muted">
+            <p>
               {assignments > 0
                 ? `Kamu mengajar di ${assignments} rombel × mapel semester ini.`
-                : "Belum ada penugasan rombel — tunggu import jadwal oleh admin (M3) atau minta admin menambah assignmen."}
+                : "Belum ada penugasan rombel — tunggu import jadwal oleh admin."}
             </p>
           )}
         </div>
 
-        <h3 style={{ fontSize: "0.95rem", margin: "8px 0" }}>Modul pembelajaran</h3>
+        <h2 style={{ margin: "4px 0 12px" }}>Modul pembelajaran</h2>
         <div className="grid">
           {MODULES.map((m) => (
-            <div className="card" key={m.nama} style={{ marginBottom: 0 }}>
-              <strong>{m.nama}</strong>
-              <p className="muted">{m.desc}</p>
-              <span className="pill">{m.milestone} — segera</span>
+            <div className="card" key={m.nama}>
+              <div className="card-body">
+                <h2 style={{ marginBottom: 4 }}>{m.nama}</h2>
+                <p className="muted" style={{ marginBottom: 10 }}>{m.desc}</p>
+                <span className="badge badge-neutral">{m.milestone} — segera</span>
+              </div>
             </div>
           ))}
         </div>

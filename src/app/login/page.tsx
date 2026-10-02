@@ -33,39 +33,46 @@ export default function LoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 420, paddingTop: 48 }}>
-      <div className="card">
-        <h1 style={{ fontSize: "1.2rem", marginBottom: 4 }}>LMS SMPN 5 Tegal</h1>
-        <p className="muted" style={{ marginBottom: 12 }}>
+    <div className="auth-wrap">
+      <form className="auth-card" onSubmit={onSubmit}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="auth-logo" src="/assets/logo.png" alt="Logo SMPN 5 Tegal" />
+        <h1>LMS SMPN 5 Tegal</h1>
+        <p className="auth-sub">
           Masuk dengan <strong>NISN</strong> (siswa), <strong>NIP/username</strong> (guru),
           atau username admin.
         </p>
-        <form onSubmit={onSubmit}>
-          <label htmlFor="username">Username / NISN</label>
+        <div className="field">
+          <label className="field-label" htmlFor="username">Username / NISN</label>
           <input
             id="username"
+            className="input"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
             inputMode="numeric"
+            placeholder="mis. 0101306751"
             required
           />
-          <label htmlFor="password">Password</label>
+        </div>
+        <div className="field">
+          <label className="field-label" htmlFor="password">Password</label>
           <input
             id="password"
+            className="input"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             required
           />
-          <button className="btn" type="submit" disabled={busy} style={{ marginTop: 14, width: "100%" }}>
-            {busy ? "Memproses…" : "Masuk"}
-          </button>
-          {error && <p className="error">{error}</p>}
-        </form>
-      </div>
-      <p className="muted" style={{ textAlign: "center" }}>Lupa password? Hubungi admin / TU sekolah.</p>
-    </main>
+        </div>
+        <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
+          {busy ? "Memproses…" : "Masuk"}
+        </button>
+        {error && <p className="error">{error}</p>}
+        <p className="auth-hint">Lupa password? Hubungi admin / TU sekolah.</p>
+      </form>
+    </div>
   );
 }

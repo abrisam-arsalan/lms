@@ -6,11 +6,7 @@ export default function LogoutButton() {
     window.location.href = "/login";
   }
   return (
-    <button
-      className="btn btn-secondary"
-      style={{ padding: "6px 12px", fontSize: "0.85rem" }}
-      onClick={onClick}
-    >
+    <button className="btn btn-ghost btn-sm" onClick={onClick}>
       Keluar
     </button>
   );
