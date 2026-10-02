@@ -1,21 +1,13 @@
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import LogoutButton from "./logout-button";
+import AppShell from "@/components/app-shell";
 
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Admin / TU",
-  GURU: "Guru",
-  SISWA: "Siswa",
-  ORTU: "Orang tua",
-  KEPSEK: "Kepala sekolah",
-};
-
-const MODULES: { nama: string; desc: string; milestone: string; href?: string }[] = [
-  { nama: "Materi", desc: "Baca materi & unduh lampiran per rombel", milestone: "M1" },
-  { nama: "Tugas", desc: "Kumpulkan tugas & lihat nilai", milestone: "M1" },
-  { nama: "TP & Nilai", desc: "Tujuan Pembelajaran & rekap nilai per mapel", milestone: "M2" },
-  { nama: "Jadwal", desc: "Jadwal hari ini & minggu ini", milestone: "M3" },
-  { nama: "Pengumuman", desc: "Informasi sekolah", milestone: "M3" },
+const MODULES: { nama: string; href: string; desc: string; milestone: string }[] = [
+  { nama: "Materi", href: "/materi", desc: "Baca materi & unduh lampiran per rombel", milestone: "M1" },
+  { nama: "Tugas", href: "/tugas", desc: "Kumpulkan tugas & lihat nilai", milestone: "M1" },
+  { nama: "TP & Nilai", href: "/nilai", desc: "Tujuan Pembelajaran & rekap nilai per mapel", milestone: "M2" },
+  { nama: "Jadwal", href: "/jadwal", desc: "Jadwal hari ini & minggu ini", milestone: "M3" },
+  { nama: "Pengumuman", href: "/pengumuman", desc: "Informasi sekolah", milestone: "M3" },
 ];
 
 export default async function DashboardPage() {
@@ -28,55 +20,49 @@ export default async function DashboardPage() {
       : Promise.resolve(0),
   ]);
   const totalUser = counts.reduce((s, c) => s + c._count._all, 0);
-  const initials = user.nama.split(/[\s,.]+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
   return (
-    <>
-      <header className="topbar">
-        <a className="brand" href="/dashboard">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="brand-logo" src="/assets/logo.png" alt="Logo" />
-          <span className="brand-text">LMS<small>SMPN 5 Tegal</small></span>
-        </a>
-        <div className="topbar-right">
-          <span className="userchip">
-            <span className="avatar">{initials}</span>
-            <span className="user-meta"><b>{user.nama}</b><small>{ROLE_LABEL[user.role] ?? user.role}</small></span>
-          </span>
-          <LogoutButton />
-        </div>
-      </header>
-      <main>
-        <div className="page-head">
-          <h1>Selamat datang, {user.nama.split(",")[0]} 👋</h1>
-          {user.role === "ADMIN" && (
-            <p>Total akun terdaftar: <strong>{totalUser}</strong>. <a href="/admin/users">Kelola akun →</a></p>
-          )}
-          {user.role === "GURU" && (
-            <p>
-              {assignments > 0
-                ? `Kamu mengajar di ${assignments} rombel × mapel semester ini.`
-                : "Belum ada penugasan rombel — tunggu import jadwal oleh admin."}
-            </p>
-          )}
-        </div>
+    <AppShell user={user} active="/dashboard">
+      <div className="page-head">
+        <h1>Selamat datang, {user.nama.split(",")[0]} 👋</h1>
+        {user.role === "ADMIN" && (
+          <p>Total akun terdaftar: <strong>{totalUser}</strong>. <a href="/admin/users">Kelola akun →</a></p>
+        )}
+        {user.role === "GURU" && (
+          <p>
+            {assignments > 0
+              ? `Kamu mengajar di ${assignments} rombel × mapel semester ini.`
+              : "Belum ada penugasan rombel — tunggu import jadwal oleh admin."}
+          </p>
+        )}
+      </div>
 
-        <h2 style={{ margin: "4px 0 12px" }}>Modul pembelajaran</h2>
-        <div className="grid">
-          {MODULES.map((m) => (
-            <div className="card" key={m.nama}>
-              <div className="card-body">
-                <h2 style={{ marginBottom: 4 }}>{m.nama}</h2>
-                <p className="muted" style={{ marginBottom: 10 }}>{m.desc}</p>
-                <span className="badge badge-neutral">{m.milestone} — segera</span>
+      {user.role === "ADMIN" && (
+        <div className="stat-grid">
+          {counts.map((c) => (
+            <div className="stat" key={c.role}>
+              <span className="stat-icon">👤</span>
+              <div>
+                <div className="stat-value">{c._count._all}</div>
+                <div className="stat-label">{c.role}</div>
               </div>
             </div>
           ))}
         </div>
-        <p className="muted" style={{ marginTop: 16 }}>
-          Fondasi (login, data master, audit) sudah aktif — M0 selesai. 🎉
-        </p>
-      </main>
-    </>
+      )}
+
+      <h2 style={{ margin: "4px 0 12px" }}>Modul pembelajaran</h2>
+      <div className="grid">
+        {MODULES.map((m) => (
+          <a className="card" key={m.nama} href={m.href} style={{ display: "block", color: "inherit" }}>
+            <div className="card-body">
+              <h2 style={{ marginBottom: 4 }}>{m.nama}</h2>
+              <p className="muted" style={{ marginBottom: 10 }}>{m.desc}</p>
+              <span className="badge badge-neutral">{m.milestone} — segera</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </AppShell>
   );
 }

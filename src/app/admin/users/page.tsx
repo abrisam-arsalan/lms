@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import AppShell from "@/components/app-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default async function AdminUsersPage() {
-  await requireRole(["ADMIN"]);
+  const user = await requireRole(["ADMIN"]);
 
   const [users, idents] = await Promise.all([
     prisma.user.findMany({
@@ -30,49 +31,40 @@ export default async function AdminUsersPage() {
   ]);
 
   return (
-    <>
-      <header className="topbar">
-        <a className="brand" href="/dashboard">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="brand-logo" src="/assets/logo.png" alt="Logo" />
-          <span className="brand-text">Kelola Akun<small>SMPN 5 Tegal</small></span>
-        </a>
-      </header>
-      <main>
-        <div className="page-head">
-          <h1>Akun</h1>
-          <p>
-            Pemetaan identitas asal:{" "}
-            {idents.map((i) => `${i.app}=${i._count._all}`).join(" · ") || "belum ada bootstrap migrasi"}{" "}
-            · tampil 200 teratas.
-          </p>
-        </div>
-        <div className="card">
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Username</th><th>Nama</th><th>NISN</th><th>Peran</th><th>Aktif</th><th>Login terakhir</th>
+    <AppShell user={user} active="/admin/users">
+      <div className="page-head">
+        <h1>Kelola Akun</h1>
+        <p>
+          Pemetaan identitas asal:{" "}
+          {idents.map((i) => `${i.app}=${i._count._all}`).join(" · ") || "belum ada bootstrap migrasi"}{" "}
+          · tampil 200 teratas.
+        </p>
+      </div>
+      <div className="card">
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Username</th><th>Nama</th><th>NISN</th><th>Peran</th><th>Aktif</th><th>Login terakhir</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={String(u.id)}>
+                  <td>{u.username}</td>
+                  <td>{u.nama}</td>
+                  <td>{u.nisn ?? "—"}</td>
+                  <td><span className={`badge ${ROLE_BADGE[u.role] ?? "badge-neutral"}`}>{ROLE_LABEL[u.role]}</span></td>
+                  <td>{u.isActive ? "✔" : "✘"}</td>
+                  <td className="muted">
+                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("id-ID") : "—"}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={String(u.id)}>
-                    <td>{u.username}</td>
-                    <td>{u.nama}</td>
-                    <td>{u.nisn ?? "—"}</td>
-                    <td><span className={`badge ${ROLE_BADGE[u.role] ?? "badge-neutral"}`}>{ROLE_LABEL[u.role]}</span></td>
-                    <td>{u.isActive ? "✔" : "✘"}</td>
-                    <td className="muted">
-                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString("id-ID") : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </main>
-    </>
+      </div>
+    </AppShell>
   );
 }

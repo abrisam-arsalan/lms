@@ -62,8 +62,42 @@ small { color: var(--muted); }
 .user-meta b { font-size: 13px; }
 .user-meta small { font-size: 11px; }
 
-/* Layout */
-main { max-width: 1120px; margin: 0 auto; padding: 20px 16px; }
+/* Layout (identik presensi: .layout > main.content, sidebar admin, bottom-nav mobile) */
+.layout { max-width: 1120px; margin: 0 auto; }
+.content { padding: 20px 16px calc(var(--bottomnav-h) + 28px); }
+.layout-admin { display: grid; grid-template-columns: 240px 1fr; max-width: 100%; }
+.layout-admin .content { padding-bottom: 40px; }
+.sidebar {
+  background: var(--card); border-right: 1px solid var(--border);
+  min-height: calc(100vh - var(--topbar-h)); padding: 16px 12px;
+  position: sticky; top: var(--topbar-h); align-self: start;
+  max-height: calc(100vh - var(--topbar-h)); overflow-y: auto;
+}
+.side-nav { display: flex; flex-direction: column; gap: 3px; }
+.side-item {
+  display: flex; align-items: center; gap: 11px; padding: 11px 14px;
+  border-radius: var(--radius-sm); color: var(--muted); font-size: 14px; font-weight: 500;
+}
+.side-item .ico { width: 22px; text-align: center; font-size: 17px; }
+.side-item:hover { background: var(--bg); color: var(--text); }
+.side-item.active { background: var(--primary-soft); color: var(--primary); font-weight: 700; }
+
+/* Bottom-nav mobile (siswa/guru/ortu/kepsek) — sama persis dgn presensi */
+.bottomnav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--bottomnav-h) + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--card); border-top: 1px solid var(--border);
+  box-shadow: 0 -6px 20px rgba(24, 24, 56, 0.06);
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; z-index: 50;
+}
+.bn-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; color: var(--muted); font-size: 14px; font-weight: 600;
+}
+.bn-item .ico { font-size: 24px; line-height: 1; }
+.bn-item.active { color: var(--primary); font-weight: 800; }
+
 .page-head { margin-bottom: 18px; }
 .page-head h1 { font-size: 23px; }
 .page-head p { color: var(--muted); }
@@ -160,4 +194,16 @@ textarea.input { min-height: 96px; resize: vertical; }
 .empty { text-align: center; color: var(--muted); padding: 32px 12px; }
 
 /* Responsive */
-@media (min-width: 640px) { main { padding: 26px 28px; } }
+@media (min-width: 640px) { .content { padding: 26px 28px calc(var(--bottomnav-h) + 28px); } }
+
+/* Admin di layar kecil: sidebar jadi horizontal scroll (persis presensi) */
+@media (max-width: 899px) {
+  .layout-admin { grid-template-columns: 1fr; }
+  .sidebar {
+    min-height: 0; max-height: none; position: static;
+    border-right: 0; border-bottom: 1px solid var(--border);
+    padding: 8px; overflow-x: auto;
+  }
+  .side-nav { flex-direction: row; gap: 4px; }
+  .side-item { white-space: nowrap; padding: 9px 13px; }
+}
