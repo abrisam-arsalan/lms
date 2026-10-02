@@ -5,6 +5,11 @@
   "/_not-found/page": "app/_not-found/page.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/login/page": "app/login/page.js",
+  "/jadwal/page": "app/jadwal/page.js",
+  "/materi/page": "app/materi/page.js",
+  "/nilai/page": "app/nilai/page.js",
   "/page": "app/page.js",
+  "/pengumuman/page": "app/pengumuman/page.js",
+  "/tugas/page": "app/tugas/page.js",
   "/admin/users/page": "app/admin/users/page.js"
 }

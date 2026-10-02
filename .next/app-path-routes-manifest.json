@@ -5,6 +5,11 @@
   "/_not-found/page": "/_not-found",
   "/dashboard/page": "/dashboard",
   "/login/page": "/login",
+  "/jadwal/page": "/jadwal",
+  "/materi/page": "/materi",
+  "/nilai/page": "/nilai",
   "/page": "/",
+  "/pengumuman/page": "/pengumuman",
+  "/tugas/page": "/tugas",
   "/admin/users/page": "/admin/users"
 }

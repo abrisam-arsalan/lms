@@ -98,7 +98,11 @@ cd /var/www/lms && sudo bash -c 'set -a; . /var/www/lms/.env; set +a; node /opt/
 bash scripts/deploy.sh            # build + push branch deploy
 
 # ── di SERVER ──
-cd /var/www/lms && git pull
+# PENTING: /var/www/lms & .git dimiliki user `deploy`, bukan usernya login.
+# Kalau `git pull` sebagai login-mu muncul "dubious ownership"/"cannot open
+# .git/FETCH_HEAD: Permission denied" → pakai sudo -u deploy (JANGAN pakai
+# `git config --global safe.directory`, itu hanya menutupi & bikin commit root):
+cd /var/www/lms && sudo -u deploy git pull
 # bila rilis membawa perubahan skema (dilihat dari pesan commit "deploy artefak … main@xxxx"):
 #   jalankan §3 ulang
 sudo systemctl restart lms

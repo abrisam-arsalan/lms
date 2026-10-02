@@ -51,10 +51,40 @@
       "namedRegex": "^/healthz(?:/)?$"
     },
     {
+      "page": "/jadwal",
+      "regex": "^/jadwal(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/jadwal(?:/)?$"
+    },
+    {
       "page": "/login",
       "regex": "^/login(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/materi",
+      "regex": "^/materi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/materi(?:/)?$"
+    },
+    {
+      "page": "/nilai",
+      "regex": "^/nilai(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/nilai(?:/)?$"
+    },
+    {
+      "page": "/pengumuman",
+      "regex": "^/pengumuman(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/pengumuman(?:/)?$"
+    },
+    {
+      "page": "/tugas",
+      "regex": "^/tugas(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tugas(?:/)?$"
     }
   ],
   "dataRoutes": [],
