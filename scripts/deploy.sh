@@ -13,8 +13,9 @@ SRC=$(git rev-parse --short HEAD)
 STAMP=$(date +%Y%m%d-%H%M%S)
 
 echo "▶ 1/5 install & build (binaryTargets linux ikut ter-generate via postinstall)"
-npm ci --no-audit --no-fund
-npm run build
+# SKIP_INSTALL=1 lewati npm ci (node_modules masih sehat) — hemat ~2-3 menit
+[ "${SKIP_INSTALL:-0}" = "1" ] || npm ci --no-audit --no-fund
+[ "${SKIP_BUILD:-0}" = "1" ] || npm run build
 
 # Next standalone bisa menaruh output di root ATAU di subfolder nama proyek
 if [ -f .next/standalone/server.js ]; then SA=.next/standalone; else SA=.next/standalone/lms; fi
