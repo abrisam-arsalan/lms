@@ -42,6 +42,7 @@ mkdir -p "$WT/src/generated" "$WT/scripts-server" "$WT/deploy"
 cp -r src/generated/cbt-client "$WT/src/generated/cbt-client"
 cp scripts/bootstrap.mjs "$WT/scripts-server/bootstrap.mjs"
 cp scripts-server/backup-lms.sh "$WT/scripts-server/backup-lms.sh"
+cp scripts-server/reset-admin.mjs "$WT/scripts-server/reset-admin.mjs"
 cp deploy/lms.service deploy/nginx-lms.conf deploy/db.sql "$WT/deploy/" 2>/dev/null || true
 cp deploy/setup-server.sh deploy/bootstrap-data.sh "$WT/deploy/" 2>/dev/null || true
 chmod +x "$WT"/deploy/*.sh 2>/dev/null || true

@@ -37,13 +37,14 @@ const stats = { create: {}, skip: {}, warn: [] };
 const bump = (k, n = 1) => (stats.create[k] = (stats.create[k] ?? 0) + n);
 const warn = (msg) => stats.warn.push(msg);
 
-// hash password sumber BISA berubah format (Laravel bcrypt $2y$) — simpan apa adanya,
-// bcryptjs Next kami memverifikasi $2a/$2b/$2y. Akun tanpa hash valid → set default.
-const DEFAULT_PW = process.env.BOOTSTRAP_DEFAULT_PASSWORD ?? "Smp5Tegal!";
-const bcrypt = (await import("bcryptjs")).default;
-const _fallbackHash = { v: null };
+// hash password sumber (Laravel $2y$ / Bun $2b$) disimpan apa adanya — diverifikasi app.
+// Akun TANPA hash bcrypt valid → diisi hash konstanta untuk password default sekolah.
+// bcryptjs sengaja TIDAK di-require: tak ada di node_modules standalone; hash di bawah
+// diprecompute (bcrypt $2a$, kompatibel). Ganti dgn: node scripts/hashpw.mjs "<pass>"
+const DEFAULT_PW = "Smp5Tegal!2026";
+const FALLBACK_HASH = "$2a$10$81CBQrgfEtRa5Anf0z37bOaex1nO34bsIv7SWOT/T4BD4Oi47yvQ2";
 function fallbackHash() {
-  return (_fallbackHash.v ??= bcrypt.hashSync(DEFAULT_PW, 10));
+  return FALLBACK_HASH;
 }
 
 const normName = (s) =>
