@@ -4,7 +4,7 @@
 # Jalankan dari git-bash di folder repo (laptop developer Windows/WSL/Linux).
 #
 # Server afterwards:
-#   cd /var/www/lms && git pull && sudo systemctl restart lms
+#   cd /var/www/lms && sudo -u deploy git pull && sudo systemctl restart lms
 # (bila ada migrasi baru: bash /var/www/lms/scripts-server/migrate.sh — lihat RUNBOOK §4)
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -69,7 +69,7 @@ cat <<EOF
 ✔ Selesai — artefak ter-push ke branch 'deploy'.
 
 DI SERVER (operator):
-  cd /var/www/lms && git pull
+  cd /var/www/lms && sudo -u deploy git pull
   # bila muncul migrasi baru:  node scripts-server/migrate-helper? → lihat RUNBOOK §4
   sudo systemctl restart lms
 EOF
