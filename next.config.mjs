@@ -9,6 +9,10 @@ const PROJECT_ROOT = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
   output: "standalone",
   outputFileTracingRoot: PROJECT_ROOT,
+  // exceljs dipakai di server action & route export — pastikan ikut ter-trace
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/exceljs/**"],
+  },
   poweredByHeader: false,
   reactStrictMode: true,
 };

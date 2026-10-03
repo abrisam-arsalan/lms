@@ -3,7 +3,8 @@ import type { NextRequest } from "next/server";
 
 // Gerbang kasar: tanpa sesi → ke /login. Verifikasi sesungguhnya (DB) terjadi
 // di server component/route lewat requireUser — middleware edge tak bisa akses Prisma.
-const PUBLIC_PATHS = [/^\/login$/, /^\/api\/auth\//, /^\/healthz$/, /^\/_next\//];
+// /api/v1 = endpoint mesin (auth token sendiri, bukan cookie sesi)
+const PUBLIC_PATHS = [/^\/login$/, /^\/api\/auth\//, /^\/api\/v1\//, /^\/healthz$/, /^\/_next\//];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

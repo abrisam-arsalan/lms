@@ -133,6 +133,27 @@ export async function submitTask(formData: FormData) {
   redirect(`/tugas?t=${taskId}&ok=1`);
 }
 
+/** Guru menandai siswa "sudah mengerjakan" (tipe CENTANG / kerja buku). */
+export async function markDone(formData: FormData) {
+  const { user, assignmentId } = await guardManage(String(formData.get("assignmentId") ?? null));
+  const taskId = BigInt(String(formData.get("taskId") ?? "0"));
+  const studentId = BigInt(String(formData.get("studentId") ?? "0"));
+  const task = await prisma.task.findFirst({ where: { id: taskId, assignmentId, deletedAt: null } });
+  if (!task) throw new Error("Tugas tidak ditemukan");
+  const now = new Date();
+  await prisma.submission.upsert({
+    where: { taskId_studentId: { taskId, studentId } },
+    create: {
+      taskId, studentId, text: "Ditandai selesai oleh guru",
+      status: task.dueAt && now > task.dueAt ? "LATE" : "ONTIME",
+    },
+    update: {},
+  });
+  await logAudit({ userId: user.id, action: "TUGAS_TANDAI", entity: "submissions", entityId: `${taskId}:${studentId}` });
+  revalidatePath("/tugas");
+  redirect(`/tugas?t=${taskId}`);
+}
+
 /* ── koreksi nilai (guru) ── */
 export async function gradeSubmission(formData: FormData) {
   const user = await getSessionUser();

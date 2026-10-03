@@ -6,7 +6,7 @@ const MODULES: { nama: string; href: string; desc: string; status: string; aktif
   { nama: "TP", href: "/tp", desc: "Atur Tujuan Pembelajaran per rombel", status: "M1 · AKTIF", aktif: true },
   { nama: "Materi", href: "/materi", desc: "Baca materi & unduh lampiran per rombel", status: "M1 · AKTIF", aktif: true },
   { nama: "Tugas", href: "/tugas", desc: "Kumpulkan tugas & lihat nilai", status: "M1 · AKTIF", aktif: true },
-  { nama: "Nilai", href: "/nilai", desc: "Matriks ketercapaian TP & unduh Excel", status: "M2" },
+  { nama: "Nilai", href: "/nilai", desc: "Matriks ketercapaian TP & unduh Excel", status: "M2 · AKTIF", aktif: true },
   { nama: "Jadwal", href: "/jadwal", desc: "Jadwal hari ini & minggu ini", status: "M3" },
   { nama: "Pengumuman", href: "/pengumuman", desc: "Informasi sekolah", status: "M3" },
 ];

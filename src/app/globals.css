@@ -192,6 +192,12 @@ a.card:hover { transform: translate(-1px,-1px); box-shadow: var(--shadow-lg); }
 .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
 .grid .card { margin-bottom: 0; }
 .empty { text-align: center; color: var(--muted); padding: 30px 12px; border: 2px dashed var(--ink); border-radius: var(--radius); font-weight: 700; background: var(--card); }
+
+/* Matriks gradebook */
+.table.matrix td { vertical-align: top; }
+.cellform { display: inline-flex; align-items: center; gap: 4px; margin: 0; }
+.cellform .input { min-height: 34px; padding: 4px 6px; font-size: 13px; }
+form.mini { margin: 0; }
 .prose { white-space: pre-line; font-weight: 500; }
 .filechip { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--ink); border-radius: 10px; background: var(--card); padding: 4px 10px; font-size: 12.5px; font-weight: 800; text-decoration: none; box-shadow: 2px 2px 0 var(--ink); margin: 3px 6px 3px 0; }
 

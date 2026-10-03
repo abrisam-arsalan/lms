@@ -4,18 +4,18 @@ import { prisma } from "@/lib/prisma";
 import { canManageAssignment } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
-import { createTp, updateTp, deleteTp } from "./actions";
+import { createTp, updateTp, deleteTp, importTpTemplate } from "./actions";
 
 export default async function TpEditPage({
   params,
   searchParams,
 }: {
   params: Promise<{ assignmentId: string }>;
-  searchParams: Promise<{ err?: string }>;
+  searchParams: Promise<{ err?: string; imp?: string; skip?: string; roster?: string }>;
 }) {
   const user = await requireRole(["GURU", "ADMIN"]);
   const { assignmentId: rawId } = await params;
-  const { err } = await searchParams;
+  const { err, imp, skip, roster } = await searchParams;
   const assignmentId = BigInt(rawId);
 
   const assignment = await prisma.assignment.findUnique({
@@ -43,6 +43,14 @@ export default async function TpEditPage({
         <div className="card-head"><h2>➕ Tambah TP</h2></div>
         <div className="card-body">
           {err && <p className="error">Kode &amp; isi TP wajib diisi.</p>}
+          {imp === "toobig" && <p className="error">File lebih dari 2 MB — pastikan file template kementerian.</p>}
+          {imp === "empty" && <p className="error">Lembar kerja tidak terbaca.</p>}
+          {imp && imp !== "toobig" && imp !== "empty" && (
+            <p className="badge badge-green" style={{ display: "block", marginBottom: 10 }}>
+              ✔ Impor: {imp} TP dibuat{skip ? `, ${skip} dilewati (kode sudah ada)` : ""}
+              {roster ? ` · template memuat ${roster} siswa` : ""}
+            </p>
+          )}
           <form action={createTp}>
             <input type="hidden" name="assignmentId" value={String(assignmentId)} />
             <div className="form-grid two">
@@ -56,6 +64,16 @@ export default async function TpEditPage({
               </div>
             </div>
             <button className="btn btn-primary" type="submit">Simpan TP</button>
+          </form>
+          <hr style={{ border: 0, borderTop: "2px dashed var(--ink)", margin: "14px 0" }} />
+          <p className="muted" style={{ marginBottom: 6 }}>
+            ⚡ <b>Salin cepat dari app kementerian:</b> unggah file template import rapor (format
+            <i> "FORMAT IMPORT NILAI RAPOR …"</i>) — kode &amp; isi TP langsung dibuat.
+          </p>
+          <form action={importTpTemplate} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <input type="hidden" name="assignmentId" value={String(assignmentId)} />
+            <input className="input" style={{ width: "auto", minWidth: 230 }} type="file" name="file" accept=".xlsx" required />
+            <button className="btn btn-sm btn-primary" type="submit">Impor TP</button>
           </form>
         </div>
       </div>

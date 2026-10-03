@@ -7,7 +7,7 @@ import {
 } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
-import { createTask, deleteTask, addTaskFile, submitTask, gradeSubmission } from "./actions";
+import { createTask, deleteTask, addTaskFile, submitTask, gradeSubmission, markDone } from "./actions";
 
 const fmt = (d: Date | null) =>
   d ? new Date(d).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—";
@@ -125,10 +125,14 @@ export default async function TugasPage({
               <div className="card-head"><h2>Belum mengumpulkan ({belum.length})</h2></div>
               <div className="card-body">
                 {belum.filter((b) => !sudah.has(String(b.userId))).map((b) => (
-                  <span key={String(b.id)} className="pill" style={{ margin: "2px 4px 2px 0" }}>
-                    {b.user.nama} {task.tipe === "CENTANG" && (
-                      <span title="centang utk siswa ini (pengumpulan di luar sesi)" style={{ cursor: "help" }}>ⓘ</span>
-                    )}
+                  <span key={String(b.id)} className="pill" style={{ margin: "2px 4px 2px 0", display: "inline-flex", alignItems: "center", gap: 6 }}>
+                    {b.user.nama}
+                    <form action={markDone} style={{ display: "inline" }}>
+                      <input type="hidden" name="assignmentId" value={String(task.assignmentId)} />
+                      <input type="hidden" name="taskId" value={String(task.id)} />
+                      <input type="hidden" name="studentId" value={String(b.userId)} />
+                      <button className="btn btn-sm" style={{ minHeight: 22, padding: "1px 8px" }} title="Tandai sudah mengerjakan (kerja buku)">✔</button>
+                    </form>
                   </span>
                 ))}
               </div>
