@@ -22,6 +22,7 @@ export const NAV: Record<Role, NavItem[]> = {
   ],
   GURU: [
     { href: "/dashboard", icon: "🏠", label: "Beranda" },
+    { href: "/tp", icon: "🎯", label: "TP" },
     { href: "/materi", icon: "📖", label: "Materi" },
     { href: "/tugas", icon: "📝", label: "Tugas" },
     { href: "/nilai", icon: "📊", label: "Nilai" },

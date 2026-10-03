@@ -2,12 +2,13 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
 
-const MODULES: { nama: string; href: string; desc: string; milestone: string }[] = [
-  { nama: "Materi", href: "/materi", desc: "Baca materi & unduh lampiran per rombel", milestone: "M1" },
-  { nama: "Tugas", href: "/tugas", desc: "Kumpulkan tugas & lihat nilai", milestone: "M1" },
-  { nama: "TP & Nilai", href: "/nilai", desc: "Tujuan Pembelajaran & rekap nilai per mapel", milestone: "M2" },
-  { nama: "Jadwal", href: "/jadwal", desc: "Jadwal hari ini & minggu ini", milestone: "M3" },
-  { nama: "Pengumuman", href: "/pengumuman", desc: "Informasi sekolah", milestone: "M3" },
+const MODULES: { nama: string; href: string; desc: string; status: string; aktif?: boolean }[] = [
+  { nama: "TP", href: "/tp", desc: "Atur Tujuan Pembelajaran per rombel", status: "M1 · AKTIF", aktif: true },
+  { nama: "Materi", href: "/materi", desc: "Baca materi & unduh lampiran per rombel", status: "M1 · AKTIF", aktif: true },
+  { nama: "Tugas", href: "/tugas", desc: "Kumpulkan tugas & lihat nilai", status: "M1 · AKTIF", aktif: true },
+  { nama: "Nilai", href: "/nilai", desc: "Matriks ketercapaian TP & unduh Excel", status: "M2" },
+  { nama: "Jadwal", href: "/jadwal", desc: "Jadwal hari ini & minggu ini", status: "M3" },
+  { nama: "Pengumuman", href: "/pengumuman", desc: "Informasi sekolah", status: "M3" },
 ];
 
 export default async function DashboardPage() {
@@ -58,7 +59,7 @@ export default async function DashboardPage() {
             <div className="card-body">
               <h2 style={{ marginBottom: 4 }}>{m.nama}</h2>
               <p className="muted" style={{ marginBottom: 10 }}>{m.desc}</p>
-              <span className="badge badge-neutral">{m.milestone} — segera</span>
+              <span className={`badge ${m.aktif ? "badge-green" : "badge-neutral"}`}>{m.status}</span>
             </div>
           </a>
         ))}
