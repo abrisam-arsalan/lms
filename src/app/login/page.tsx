@@ -1,78 +1,19 @@
-"use client";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/lib/auth";
+import LoginPage from "./login-client";
 
-import { useState } from "react";
+// force-dynamic: HTML login TIDAK boleh diprerender/dicache (akibatnya tema
+// baru tak muncul berbulan-bulan di browser pengguna setelah rilis).
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
-export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+export const metadata = {
+  title: "Masuk — LMS SMPN 5 Tegal",
+  cacheControl: "no-store",
+};
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        const next = new URLSearchParams(window.location.search).get("next") || "/dashboard";
-        window.location.href = next;
-        return;
-      }
-      setError(data.error ?? "Login gagal");
-    } catch {
-      setError("Tidak dapat menghubungi server. Coba lagi.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="auth-wrap">
-      <form className="auth-card" onSubmit={onSubmit}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="auth-logo" src="/assets/logo.png" alt="Logo SMPN 5 Tegal" />
-        <h1>LMS SMPN 5 Tegal</h1>
-        <p className="auth-sub">
-          Masuk dengan <strong>NISN</strong> (siswa), <strong>NIP/username</strong> (guru),
-          atau username admin.
-        </p>
-        <div className="field">
-          <label className="field-label" htmlFor="username">Username / NISN</label>
-          <input
-            id="username"
-            className="input"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            autoComplete="username"
-            inputMode="numeric"
-            placeholder="mis. 0101306751"
-            required
-          />
-        </div>
-        <div className="field">
-          <label className="field-label" htmlFor="password">Password</label>
-          <input
-            id="password"
-            className="input"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-        </div>
-        <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
-          {busy ? "Memproses…" : "Masuk"}
-        </button>
-        {error && <p className="error">{error}</p>}
-        <p className="auth-hint">Lupa password? Hubungi admin / TU sekolah.</p>
-      </form>
-    </div>
-  );
+export default async function LoginRoute() {
+  const user = await getSessionUser();
+  if (user) redirect("/dashboard");
+  return <LoginPage />;
 }
