@@ -18,7 +18,24 @@
     "afterFiles": [],
     "fallback": []
   },
-  "dynamicRoutes": [],
+  "dynamicRoutes": [
+    {
+      "page": "/api/file/[id]",
+      "regex": "^/api/file/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/file/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/tp/[assignmentId]",
+      "regex": "^/tp/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPassignmentId": "nxtPassignmentId"
+      },
+      "namedRegex": "^/tp/(?<nxtPassignmentId>[^/]+?)(?:/)?$"
+    }
+  ],
   "staticRoutes": [
     {
       "page": "/",
@@ -79,6 +96,12 @@
       "regex": "^/pengumuman(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/pengumuman(?:/)?$"
+    },
+    {
+      "page": "/tp",
+      "regex": "^/tp(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tp(?:/)?$"
     },
     {
       "page": "/tugas",

@@ -1,15 +1,18 @@
 {
   "/api/auth/login/route": "app/api/auth/login/route.js",
   "/api/auth/logout/route": "app/api/auth/logout/route.js",
+  "/api/file/[id]/route": "app/api/file/[id]/route.js",
   "/healthz/route": "app/healthz/route.js",
   "/_not-found/page": "app/_not-found/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/jadwal/page": "app/jadwal/page.js",
   "/login/page": "app/login/page.js",
+  "/jadwal/page": "app/jadwal/page.js",
   "/materi/page": "app/materi/page.js",
   "/nilai/page": "app/nilai/page.js",
   "/page": "app/page.js",
   "/pengumuman/page": "app/pengumuman/page.js",
+  "/tp/[assignmentId]/page": "app/tp/[assignmentId]/page.js",
+  "/tp/page": "app/tp/page.js",
   "/tugas/page": "app/tugas/page.js",
   "/admin/users/page": "app/admin/users/page.js"
 }

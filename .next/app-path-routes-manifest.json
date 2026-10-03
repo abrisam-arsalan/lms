@@ -1,15 +1,18 @@
 {
   "/api/auth/login/route": "/api/auth/login",
   "/api/auth/logout/route": "/api/auth/logout",
+  "/api/file/[id]/route": "/api/file/[id]",
   "/healthz/route": "/healthz",
   "/_not-found/page": "/_not-found",
   "/dashboard/page": "/dashboard",
-  "/jadwal/page": "/jadwal",
   "/login/page": "/login",
+  "/jadwal/page": "/jadwal",
   "/materi/page": "/materi",
   "/nilai/page": "/nilai",
   "/page": "/",
   "/pengumuman/page": "/pengumuman",
+  "/tp/[assignmentId]/page": "/tp/[assignmentId]",
+  "/tp/page": "/tp",
   "/tugas/page": "/tugas",
   "/admin/users/page": "/admin/users"
 }
