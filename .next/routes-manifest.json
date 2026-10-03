@@ -92,6 +92,12 @@
       "namedRegex": "^/nilai(?:/)?$"
     },
     {
+      "page": "/notifikasi",
+      "regex": "^/notifikasi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/notifikasi(?:/)?$"
+    },
+    {
       "page": "/pengumuman",
       "regex": "^/pengumuman(?:/)?$",
       "routeKeys": {},
