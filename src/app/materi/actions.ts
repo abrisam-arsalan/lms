@@ -43,8 +43,18 @@ export async function createMateri(formData: FormData) {
     },
   });
   await logAudit({ userId: user.id, action: "MATERI_BAU", entity: "materials", entityId: String(m.id) });
+  if (status === "TERBIT") await notifyMateri(assignmentId, judul);
   revalidatePath(`/materi`);
   back(assignmentId);
+}
+
+async function notifyMateri(assignmentId: bigint, judul: string) {
+  const { notifyStudentsOfClass } = await import("@/lib/notify");
+  const a = await prisma.assignment.findUnique({
+    where: { id: assignmentId },
+    include: { subject: true, class: true },
+  });
+  if (a) await notifyStudentsOfClass(a.classId, "materi_baru", `📖 Materi baru: ${judul} (${a.class.name} · ${a.subject.name})`, "/materi");
 }
 
 export async function updateMateri(formData: FormData) {
@@ -56,6 +66,7 @@ export async function updateMateri(formData: FormData) {
   const status = formData.get("status") === "TERBIT" ? "TERBIT" : "DRAF";
   const m = await prisma.material.findFirst({ where: { id, assignmentId, deletedAt: null } });
   if (!m || !judul) back(assignmentId);
+  const jadiTerbit = status === "TERBIT" && m.status === "DRAF";
 
   await prisma.material.update({
     where: { id },
@@ -68,6 +79,7 @@ export async function updateMateri(formData: FormData) {
     },
   });
   await logAudit({ action: "MATERI_UBAH", entity: "materials", entityId: String(id) });
+  if (jadiTerbit) await notifyMateri(assignmentId, judul);
   revalidatePath(`/materi`);
   back(assignmentId);
 }

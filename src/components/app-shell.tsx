@@ -1,5 +1,6 @@
 import type { User } from "@prisma/client";
 import { NAV, initials } from "@/lib/nav";
+import { prisma } from "@/lib/prisma";
 import LogoutButton from "./logout-button";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -14,7 +15,7 @@ const ROLE_LABEL: Record<string, string> = {
  * Kerangka halaman selaras Presensi: topbar (brand + avatar + keluar),
  * konten, dan bottom-nav mobile per peran. `active` = href rute saat ini.
  */
-export default function AppShell({
+export default async function AppShell({
   user,
   active,
   children,
@@ -25,6 +26,10 @@ export default function AppShell({
 }) {
   const nav = NAV[user.role] ?? [];
   const isAdmin = user.role === "ADMIN";
+  const isReader = user.role === "SISWA" || user.role === "ORTU";
+  const unread = isReader
+    ? await prisma.notification.count({ where: { userId: user.id, readAt: null } })
+    : 0;
 
   return (
     <>
@@ -37,6 +42,11 @@ export default function AppShell({
           </span>
         </a>
         <div className="topbar-right">
+          {isReader && (
+            <a href="/notifikasi" className="bell" aria-label="Notifikasi" style={{ position: "relative" }}>
+              🔔{unread > 0 && <span className="bell-dot">{unread > 99 ? "99+" : unread}</span>}
+            </a>
+          )}
           <span className="userchip">
             <span className="avatar">{initials(user.nama)}</span>
             <span className="user-meta">

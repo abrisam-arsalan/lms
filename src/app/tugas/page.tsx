@@ -7,10 +7,12 @@ import {
 } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
-import { createTask, deleteTask, addTaskFile, submitTask, gradeSubmission, markDone } from "./actions";
+import { createTask, deleteTask, addTaskFile, submitTask, gradeSubmission, markDone, updateTask } from "./actions";
 
 const fmt = (d: Date | null) =>
   d ? new Date(d).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—";
+const dtLocal = (d: Date | null) =>
+  d ? new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
 
 const ERRP: Record<string, string> = {
   lewat: "Batas akhir sudah lewat — tidak bisa mengumpulkan.",
@@ -185,7 +187,7 @@ export default async function TugasPage({
         tasks: {
           where: { deletedAt: null },
           include: { _count: { select: { submissions: true } }, tp: true },
-          orderBy: { dueAt: "desc" },
+          orderBy: [{ status: "asc" }, { dueAt: "desc" }],
         },
       },
     });
@@ -256,6 +258,36 @@ export default async function TugasPage({
                 {tk._count.submissions} terkumpul · tenggat {fmt(tk.dueAt)} ·{" "}
                 <span className={`badge ${tk.status === "TERBIT" ? "badge-green" : "badge-neutral"}`}>{tk.status}</span>
               </div>
+              <details style={{ marginTop: 6 }}>
+                <summary style={{ cursor: "pointer", fontWeight: 800, fontSize: 12.5 }}>✏️ ubah</summary>
+                <form action={updateTask} style={{ marginTop: 8, maxWidth: 640 }}>
+                  <input type="hidden" name="assignmentId" value={String(assignmentId)} />
+                  <input type="hidden" name="id" value={String(tk.id)} />
+                  <div className="field"><label className="field-label">Judul</label>
+                    <input className="input" name="judul" defaultValue={tk.judul} required /></div>
+                  <div className="field"><label className="field-label">Instruksi</label>
+                    <textarea className="input" name="instruksi" rows={3} defaultValue={tk.instruksi} /></div>
+                  <div className="form-grid two">
+                    <div className="field"><label className="field-label">Tipe</label>
+                      <select className="input" name="tipe" defaultValue={tk.tipe}>
+                        <option value="FILE">FILE</option><option value="TEKS">TEKS</option><option value="CENTANG">CENTANG</option>
+                      </select></div>
+                    <div className="field"><label className="field-label">TP</label>
+                      <select className="input" name="tpId" defaultValue={tk.tpId ? String(tk.tpId) : ""}>
+                        <option value="">— tanpa TP —</option>
+                        {assignment.learningTargets.map((tp) => <option key={String(tp.id)} value={String(tp.id)}>{tp.code}</option>)}
+                      </select></div>
+                    <div className="field"><label className="field-label">Tenggat</label>
+                      <input className="input" type="datetime-local" name="dueAt" defaultValue={dtLocal(tk.dueAt)} /></div>
+                    <div className="field"><label className="field-label">Toleransi s/d</label>
+                      <input className="input" type="datetime-local" name="lateUntil" defaultValue={dtLocal(tk.lateUntil)} /></div>
+                  </div>
+                  <div className="row-actions">
+                    <button className="btn btn-sm btn-primary" name="status" value="TERBIT" type="submit">Simpan &amp; terbitkan</button>
+                    <button className="btn btn-sm" name="status" value="DRAF" type="submit">Simpan (draf)</button>
+                  </div>
+                </form>
+              </details>
             </div>
             <DangerSubmit
               action={deleteTask}

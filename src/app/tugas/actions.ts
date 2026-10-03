@@ -43,8 +43,62 @@ export async function createTask(formData: FormData) {
     },
   });
   await logAudit({ userId: user.id, action: "TUGAS_BAU", entity: "tasks", entityId: String(t.id) });
+  if (t.status === "TERBIT") await notifyTask(t.id);
   revalidatePath("/tugas");
   redirect(`/tugas?a=${assignmentId}`);
+}
+
+/** Edit tugas (judul/instruksi/tipe/TP/tenggat/status). Notifikasi bila baru terbit. */
+export async function updateTask(formData: FormData) {
+  const { user, assignmentId } = await guardManage(String(formData.get("assignmentId") ?? null));
+  const id = BigInt(String(formData.get("id") ?? "0"));
+  const lama = await prisma.task.findFirst({ where: { id, assignmentId, deletedAt: null } });
+  if (!lama) throw new Error("Tugas tidak ditemukan");
+  const judul = String(formData.get("judul") ?? "").trim() || lama.judul;
+  const tipeRaw = String(formData.get("tipe") ?? lama.tipe);
+  const tipe = (["FILE", "TEKS", "CENTANG"].includes(tipeRaw) ? tipeRaw : lama.tipe) as "FILE" | "TEKS" | "CENTANG";
+  const status = formData.get("status") === "TERBIT" ? "TERBIT" : "DRAF";
+  const dueStr = String(formData.get("dueAt") ?? "").trim();
+  const lateStr = String(formData.get("lateUntil") ?? "").trim();
+  const t = await prisma.task.update({
+    where: { id },
+    data: {
+      judul,
+      instruksi: String(formData.get("instruksi") ?? lama.instruksi),
+      tipe,
+      status,
+      tpId: formData.get("tpId") ? BigInt(String(formData.get("tpId"))) : lama.tpId,
+      dueAt: dueStr ? new Date(dueStr) : null,
+      lateUntil: lateStr ? new Date(lateStr) : null,
+      publishAt: status === "TERBIT" ? lama.publishAt ?? new Date() : null,
+    },
+    include: { assignment: { include: { subject: true, class: true } } },
+  });
+  await logAudit({
+    userId: user.id, action: "TUGAS_UBAH", entity: "tasks", entityId: String(id),
+    detail: { statusLama: lama.status, statusBaru: status },
+  });
+  if (status === "TERBIT" && lama.status === "DRAF") await notifyTask(id);
+  revalidatePath("/tugas");
+  redirect(`/tugas?a=${assignmentId}`);
+}
+
+async function notifyTask(taskId: bigint) {
+  const t = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { assignment: { include: { subject: true, class: true } } },
+  });
+  if (!t) return;
+  const { notifyStudentsOfClass } = await import("@/lib/notify");
+  const due = t.dueAt
+    ? ` — tenggat ${t.dueAt.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}`
+    : "";
+  await notifyStudentsOfClass(
+    t.assignment.classId,
+    "tugas_baru",
+    `📝 Tugas baru: ${t.judul} (${t.assignment.class.name} · ${t.assignment.subject.name})${due}`,
+    "/tugas",
+  );
 }
 
 export async function deleteTask(formData: FormData) {
@@ -150,6 +204,8 @@ export async function markDone(formData: FormData) {
     update: {},
   });
   await logAudit({ userId: user.id, action: "TUGAS_TANDAI", entity: "submissions", entityId: `${taskId}:${studentId}` });
+  const { notify } = await import("@/lib/notify");
+  await notify([studentId], "tugas_selesai", `📝 ${task.judul} ditandai selesai oleh guru — tunggu nilai`, `/tugas?t=${taskId}`);
   revalidatePath("/tugas");
   redirect(`/tugas?t=${taskId}`);
 }
@@ -186,6 +242,11 @@ export async function gradeSubmission(formData: FormData) {
     userId: user.id, action: "NILAI_SIMPAN", entity: "grades", entityId: String(sub.taskId),
     detail: { lama: lama ? Number(lama.score) : null, baru: score, siswa: String(sub.studentId) },
   });
+  const { notify, ortuIdsOfClass } = await import("@/lib/notify");
+  const msg = `🎯 Nilai keluar: ${sub.task.judul} — ${score}`;
+  await notify([sub.studentId], "nilai_keluar", msg, `/tugas?t=${sub.taskId}`);
+  const stuClass = await prisma.student.findUnique({ where: { userId: sub.studentId }, select: { classId: true } });
+  if (stuClass?.classId) await notify(await ortuIdsOfClass(stuClass.classId), "nilai_keluar", msg, "/nilai");
   revalidatePath("/tugas");
   redirect(`/tugas?t=${sub.taskId}`);
 }
