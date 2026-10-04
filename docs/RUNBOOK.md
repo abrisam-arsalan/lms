@@ -181,6 +181,30 @@ tail -50 /var/log/nginx/lms.error.log
 | Login semua gagal | hash bcrypt dari CBT ($2y$) — harusnya OK; cek jam server | `SELECT 1`; TZ server (WIB) & kolom expiresAt |
 | NISN tidak muncul | bootstrap belum jalan / nama tak cocok | §5 ulangi (idempoten), cek laporan peringatan |
 
+## 8b. Pilot & Freeze Presensi (fase percontohan PRD)
+
+Saat pilot LMS dimulai (1–2 rombel + guru champion), aktifkan **freeze materi &
+pengumuman di aplikasi presensi** agar tidak dobel-input (kontrak §7):
+
+```bash
+# 1) Di laptop (setelah persetujuan): publish branch freeze
+cd <repo-presensi> && git push origin lms-freeze
+
+# 2) Di server: presensi pakai branch freeze + nyalakan flag
+cd /var/www/presensi && sudo -u deploy git fetch && sudo -u deploy git checkout lms-freeze
+sudo systemctl edit sekolah-app     # isi:
+#   [Service]
+#   Environment="PRESENSI_FREEZE=1"
+#   Environment="LMS_URL=https://lms.smp5tegal.sch.id"
+sudo systemctl restart sekolah-app
+```
+
+Dampak (teruji smoke 29/29 saat OFF; uji live saat ON):
+- Dashboard guru/admin/siswa/ortu: banner biru “Materi & pengumuman kini di LMS”.
+- Form pembuatan pengumuman & input materi **hilang/diblokir server** (pesan jelas bila dipaksa POST).
+- Catatan kelas & absensi **tetap normal** — presensi fokus ke situ.
+- **Batal freeze:** hapus baris `PRESENSI_FREEZE` dari override + restart (materi lama tetap terbaca sebagai arsip; saat OFF, isian kembali seperti semula).
+
 ## 9. Rollback rilis
 
 ```bash
