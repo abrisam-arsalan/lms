@@ -12,6 +12,8 @@ export const NAV: Record<Role, NavItem[]> = {
   ADMIN: [
     { href: "/dashboard", icon: "🏠", label: "Beranda" },
     { href: "/admin/users", icon: "👥", label: "Akun" },
+    { href: "/admin/master", icon: "🗂", label: "Master" },
+    { href: "/admin/import", icon: "📥", label: "Import" },
     { href: "/jadwal", icon: "🗓️", label: "Jadwal" },
     { href: "/pengumuman", icon: "📢", label: "Pengumuman" },
   ],

@@ -114,6 +114,26 @@ export async function addMateriFile(formData: FormData) {
   back(assignmentId);
 }
 
+/** Siswa menandai materi sudah dibaca (PRD M1: indikator dibaca). */
+export async function markRead(formData: FormData) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "SISWA") throw new Error("Hanya siswa");
+  const materialId = BigInt(String(formData.get("materialId") ?? "0"));
+  const m = await prisma.material.findFirst({
+    where: { id: materialId, deletedAt: null },
+    include: { assignment: { select: { classId: true } } },
+  });
+  if (!m) throw new Error("Materi tidak ada");
+  const stu = await prisma.student.findUnique({ where: { userId: user.id }, select: { classId: true } });
+  if (stu?.classId !== m.assignment.classId) throw new Error("Bukan materi kelasmu");
+  await prisma.materialRead.upsert({
+    where: { materialId_userId: { materialId, userId: user.id } },
+    create: { materialId, userId: user.id },
+    update: {},
+  });
+  revalidatePath("/materi");
+}
+
 export async function deleteMateriFile(formData: FormData) {
   const { assignmentId } = await guard(formData.get("assignmentId")?.toString() ?? null);
   const id = BigInt(String(formData.get("id") ?? "0"));

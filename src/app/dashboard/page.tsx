@@ -70,6 +70,41 @@ export default async function DashboardPage() {
   ]);
   const totalUser = counts.reduce((s, c) => s + c._count._all, 0);
 
+  // ── ringkasan kerja GURU lintas rombel ──
+  let guruSum: { pending: number; lewat: { id: bigint; judul: string; cls: string; due: Date }[]; dekat: { id: bigint; judul: string; cls: string; due: Date }[]; punyaRombel: boolean } | null = null;
+  if (user.role === "GURU") {
+    try {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: user.id } });
+      const now = Date.now();
+      const tasks = teacher
+        ? await prisma.task.findMany({
+            where: {
+              status: "TERBIT", deletedAt: null,
+              assignment: { teacherId: teacher.id, ...(ctx ? { semesterId: ctx.semester.id } : {}) },
+              dueAt: { not: null, gt: new Date(now - 30 * 86_400_000), lt: new Date(now + 3 * 86_400_000) },
+            },
+            include: {
+              _count: { select: { submissions: true } },
+              assignment: { select: { class: { select: { name: true, _count: { select: { students: true } } } } } },
+            },
+            orderBy: { dueAt: "asc" },
+          })
+        : [];
+      const pending = teacher
+        ? await prisma.submission.count({
+            where: { grade: null, task: { status: "TERBIT", deletedAt: null, assignment: { teacherId: teacher.id } } },
+          })
+        : 0;
+      const lewat = tasks
+        .filter((t) => +t.dueAt! < now && t._count.submissions < (t.assignment.class?._count?.students ?? 999))
+        .map((t) => ({ id: t.id, judul: t.judul, cls: t.assignment.class.name, due: t.dueAt! }));
+      const dekat = tasks
+        .filter((t) => +t.dueAt! >= now)
+        .map((t) => ({ id: t.id, judul: t.judul, cls: t.assignment.class.name, due: t.dueAt! }));
+      guruSum = { pending, lewat, dekat, punyaRombel: assignments > 0 };
+    } catch { /* abaikan */ }
+  }
+
   return (
     <AppShell user={user} active="/dashboard">
       <div className="page-head">
@@ -85,6 +120,42 @@ export default async function DashboardPage() {
           </p>
         )}
       </div>
+
+      {guruSum && (guruSum.pending > 0 || guruSum.lewat.length > 0 || guruSum.dekat.length > 0 || !guruSum.punyaRombel) && (
+        <div className="card">
+          <div className="card-head"><h2>📌 Perlu perhatianmu</h2><a className="pill" href="/tugas">ke Tugas →</a></div>
+          <div className="card-body">
+            {!guruSum.punyaRombel && (
+              <p className="alert alert-error" style={{ marginBottom: 10 }}>
+                Kamu belum punya penugasan rombel × mapel semester ini — minta admin membuatkan di <b>Master &amp; Assignmen</b>.
+              </p>
+            )}
+            {guruSum.pending > 0 && (
+              <p style={{ marginBottom: 8 }}>
+                <a className="badge badge-yellow" href="/tugas" style={{ textDecoration: "none" }}>
+                  ✍ {guruSum.pending} pengumpulan menunggu dikoreksi
+                </a>
+              </p>
+            )}
+            {guruSum.lewat.length > 0 && (
+              <>
+                <p className="muted" style={{ fontWeight: 800 }}>Tenggat lewat, masih ada yang belum kumpul:</p>
+                {guruSum.lewat.slice(0, 5).map((t) => (
+                  <div className="muted" key={String(t.id)}>• <a href={`/tugas?t=${t.id}`}>{t.judul}</a> — {t.cls} · lewat {new Date(t.due).toLocaleDateString("id-ID")}</div>
+                ))}
+              </>
+            )}
+            {guruSum.dekat.length > 0 && (
+              <>
+                <p className="muted" style={{ fontWeight: 800, marginTop: 8 }}>Tenggat dekat (≤ 3 hari):</p>
+                {guruSum.dekat.slice(0, 5).map((t) => (
+                  <div className="muted" key={String(t.id)}>• <a href={`/tugas?t=${t.id}`}>{t.judul}</a> — {t.cls} · {new Date(t.due).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {user.role === "ADMIN" && (
         <div className="stat-grid">

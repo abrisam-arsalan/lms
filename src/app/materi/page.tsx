@@ -7,7 +7,7 @@ import {
 } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
-import { createMateri, updateMateri, deleteMateri, addMateriFile, deleteMateriFile } from "./actions";
+import { createMateri, updateMateri, deleteMateri, addMateriFile, deleteMateriFile, markRead } from "./actions";
 
 const fmt = (d: Date | null) => (d ? new Date(d).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—");
 const size = (b: bigint) => `${(Number(b) / 1024).toFixed(0)} KB`;
@@ -43,6 +43,12 @@ export default async function MateriPage({
       },
       orderBy: { publishAt: "desc" },
     });
+    const myReads = new Set(
+      (await prisma.materialRead.findMany({
+        where: { userId: user.id, materialId: { in: materials.map((m) => m.id) } },
+        select: { materialId: true },
+      })).map((r) => String(r.materialId)),
+    );
     return (
       <AppShell user={user} active="/materi">
         <div className="page-head">
@@ -65,6 +71,16 @@ export default async function MateriPage({
                     📎 {f.nama}
                   </a>
                 ))}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                {myReads.has(String(m.id)) ? (
+                  <span className="badge badge-green">✓ sudah dibaca</span>
+                ) : (
+                  <form action={markRead} style={{ display: "inline" }}>
+                    <input type="hidden" name="materialId" value={String(m.id)} />
+                    <button className="btn btn-sm" type="submit">✓ tandai sudah dibaca</button>
+                  </form>
+                )}
               </div>
             </div>
           </div>
@@ -116,13 +132,14 @@ export default async function MateriPage({
       learningTargets: { orderBy: { urutan: "asc" } },
       materials: {
         where: { deletedAt: null },
-        include: { tp: true, files: true },
+        include: { tp: true, files: true, _count: { select: { reads: true } } },
         orderBy: { urutan: "asc" },
       },
     },
   });
   if (!assignment) notFound();
   const ro = user.role === "KEPSEK";
+  const jmlSiswa = await prisma.student.count({ where: { classId: assignment.classId } });
 
   return (
     <AppShell user={user} active="/materi">
@@ -180,7 +197,7 @@ export default async function MateriPage({
           <div className="card-body">
             <p className="muted" style={{ marginBottom: 6 }}>
               {m.tp && <span className="pill">{m.tp.code}</span>}{" "}
-              Urutan {m.urutan} · terbit {fmt(m.publishAt)}
+              Urutan {m.urutan} · terbit {fmt(m.publishAt)} · 👁 dibaca {m._count.reads}/{jmlSiswa}
             </p>
             <p className="prose">{m.body}</p>
             <div style={{ margin: "8px 0" }}>

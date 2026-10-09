@@ -60,6 +60,7 @@ model User {
   announcements  Announcement[]
   auditLogs      AuditLog[]
   homeroomOf     Class[]          @relation("Homeroom")
+  materialReads  MaterialRead[]   @relation("MaterialReads")
 
   @@map("users")
 }
@@ -281,9 +282,21 @@ model Material {
   tp           LearningTarget? @relation(fields: [tpId], references: [id], onDelete: SetNull)
   createdBy    User          @relation(fields: [createdById], references: [id])
   files        MaterialFile[]
+  reads        MaterialRead[]
 
   @@index([assignmentId, status, urutan])
   @@map("materials")
+}
+
+model MaterialRead {
+  materialId BigInt   @map("material_id")
+  userId     BigInt   @map("user_id")
+  readAt     DateTime @default(now()) @map("read_at")
+  material   Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  user       User     @relation("MaterialReads", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([materialId, userId])
+  @@map("material_reads")
 }
 
 model MaterialFile {

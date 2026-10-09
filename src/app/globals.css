@@ -83,6 +83,12 @@ small { color: var(--muted); }
 .page-head h1 { font-size: 23px; }
 .page-head p { color: var(--muted); font-weight: 600; }
 
+/* Alerts (ala presensi, versi neubrutal) */
+.alert { border: var(--line); border-radius: var(--radius-sm); padding: 11px 13px; margin-bottom: 12px; font-size: 14px; font-weight: 600; box-shadow: 2px 2px 0 var(--ink); background: var(--card); }
+.alert-success { background: var(--mint); }
+.alert-error { background: var(--pink); }
+.alert-info { background: var(--sky); }
+
 /* Lonceng notifikasi */
 .bell { font-size: 20px; text-decoration: none; position: relative; line-height: 1; padding: 4px; }
 .bell-dot {
