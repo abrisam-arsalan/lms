@@ -11,13 +11,15 @@
   "/dashboard/page": "app/dashboard/page.js",
   "/jadwal/page": "app/jadwal/page.js",
   "/materi/page": "app/materi/page.js",
-  "/nilai/page": "app/nilai/page.js",
   "/notifikasi/page": "app/notifikasi/page.js",
-  "/page": "app/page.js",
+  "/nilai/page": "app/nilai/page.js",
   "/pengumuman/page": "app/pengumuman/page.js",
+  "/page": "app/page.js",
   "/tp/[assignmentId]/page": "app/tp/[assignmentId]/page.js",
   "/tp/page": "app/tp/page.js",
   "/tugas/page": "app/tugas/page.js",
-  "/admin/users/page": "app/admin/users/page.js",
-  "/login/page": "app/login/page.js"
+  "/admin/master/page": "app/admin/master/page.js",
+  "/login/page": "app/login/page.js",
+  "/admin/import/page": "app/admin/import/page.js",
+  "/admin/users/page": "app/admin/users/page.js"
 }

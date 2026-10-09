@@ -11,13 +11,15 @@
   "/dashboard/page": "/dashboard",
   "/jadwal/page": "/jadwal",
   "/materi/page": "/materi",
-  "/nilai/page": "/nilai",
   "/notifikasi/page": "/notifikasi",
-  "/page": "/",
+  "/nilai/page": "/nilai",
   "/pengumuman/page": "/pengumuman",
+  "/page": "/",
   "/tp/[assignmentId]/page": "/tp/[assignmentId]",
   "/tp/page": "/tp",
   "/tugas/page": "/tugas",
-  "/admin/users/page": "/admin/users",
-  "/login/page": "/login"
+  "/admin/master/page": "/admin/master",
+  "/login/page": "/login",
+  "/admin/import/page": "/admin/import",
+  "/admin/users/page": "/admin/users"
 }

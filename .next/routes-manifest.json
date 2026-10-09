@@ -50,6 +50,18 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/admin/import",
+      "regex": "^/admin/import(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/import(?:/)?$"
+    },
+    {
+      "page": "/admin/master",
+      "regex": "^/admin/master(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/master(?:/)?$"
+    },
+    {
       "page": "/admin/users",
       "regex": "^/admin/users(?:/)?$",
       "routeKeys": {},
