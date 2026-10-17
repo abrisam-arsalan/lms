@@ -46,22 +46,22 @@ export default async function RekapPresensiPage({
           <p>Rekap kehadiran dan catatan kegiatan belajar di kelas.</p>
         </div>
 
-        <div className="stat-grid small" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>✅ Hadir</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.HADIR}</span>
+        <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>✅ Hadir</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.HADIR}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>🤒 Sakit</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.SAKIT}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>🤒 Sakit</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.SAKIT}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>📄 Izin</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.IZIN}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>📄 Izin</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.IZIN}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>❌ Alpa</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.ALPHA}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>❌ Alpa</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.ALPHA}</span>
           </div>
         </div>
 
@@ -135,22 +135,22 @@ export default async function RekapPresensiPage({
           <p>Pantau kehadiran harian dan jurnal materi pembelajaran anak Anda.</p>
         </div>
 
-        <div className="stat-grid small" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>✅ Hadir</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.HADIR}</span>
+        <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>✅ Hadir</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.HADIR}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>🤒 Sakit</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.SAKIT}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>🤒 Sakit</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.SAKIT}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>📄 Izin</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.IZIN}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>📄 Izin</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.IZIN}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0 }}>
-            <h3>❌ Alpa</h3>
-            <span style={{ fontSize: 24, fontWeight: 900 }}>{summary.ALPHA}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+            <h3 style={{ fontSize: 14 }}>❌ Alpa</h3>
+            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.ALPHA}</span>
           </div>
         </div>
 
@@ -249,28 +249,28 @@ export default async function RekapPresensiPage({
         </form>
       </div>
 
-      <div className="stat-grid small" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12, marginBottom: 20 }}>
-        <div className="card" style={{ textAlign: "center", margin: 0 }}>
-          <h3>📝 Sesi Selesai</h3>
-          <span style={{ fontSize: 24, fontWeight: 900 }}>
+      <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+          <h3 style={{ fontSize: 13 }}>📝 Sesi Selesai</h3>
+          <span style={{ fontSize: 22, fontWeight: 900 }}>
             {sessions.filter((s) => s.status === "SELESAI").length} / {sessions.length}
           </span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0 }}>
-          <h3>✅ Hadir</h3>
-          <span style={{ fontSize: 24, fontWeight: 900 }}>{totalHadir}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+          <h3 style={{ fontSize: 13 }}>✅ Hadir</h3>
+          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalHadir}</span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0 }}>
-          <h3>🤒 Sakit</h3>
-          <span style={{ fontSize: 24, fontWeight: 900 }}>{totalSakit}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+          <h3 style={{ fontSize: 13 }}>🤒 Sakit</h3>
+          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalSakit}</span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0 }}>
-          <h3>📄 Izin</h3>
-          <span style={{ fontSize: 24, fontWeight: 900 }}>{totalIzin}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+          <h3 style={{ fontSize: 13 }}>📄 Izin</h3>
+          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalIzin}</span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0 }}>
-          <h3>❌ Alpa</h3>
-          <span style={{ fontSize: 24, fontWeight: 900 }}>{totalAlpa}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
+          <h3 style={{ fontSize: 13 }}>❌ Alpa</h3>
+          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalAlpa}</span>
         </div>
       </div>
 

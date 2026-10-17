@@ -44,8 +44,9 @@ export default async function MpiPage({
           style={{
             padding: 0,
             overflow: "hidden",
-            height: "calc(100vh - 220px)",
-            minHeight: 560,
+            height: "calc(100vh - 160px)",
+            minHeight: 460,
+            maxHeight: 780,
             border: "3px solid var(--border)",
             boxShadow: "var(--shadow)",
           }}

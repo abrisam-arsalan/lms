@@ -81,32 +81,38 @@ export default async function PresensiPage({
                   key={String(r.id)}
                   style={{
                     display: "flex",
-                    alignItems: "center",
+                    alignItems: "stretch",
                     justifyContent: "space-between",
-                    flexWrap: "wrap",
-                    gap: 12,
-                    padding: "8px 0",
-                    borderBottom: "1px dashed var(--border)",
+                    flexDirection: "column",
+                    gap: 10,
+                    padding: "12px",
+                    borderBottom: "2px solid var(--border)",
                   }}
                 >
-                  <div style={{ minWidth: 200, flex: 1 }}>
-                    <span style={{ fontWeight: 800, marginRight: 8 }}>{i + 1}.</span>
-                    <b>{r.student.nama}</b>
-                    <div className="meta">NISN: {r.student.nisn ?? "—"} · NIS: {r.student.nis ?? "—"}</div>
+                  <div style={{ width: "100%" }}>
+                    <span style={{ fontWeight: 900, marginRight: 8, fontSize: 16 }}>{i + 1}.</span>
+                    <b style={{ fontSize: 15 }}>{r.student.nama}</b>
+                    <div className="meta" style={{ marginTop: 2 }}>NISN: {r.student.nisn ?? "—"} · NIS: {r.student.nis ?? "—"}</div>
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                    <div style={{ display: "flex", gap: 4 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, width: "100%" }}>
                       {(["HADIR", "SAKIT", "IZIN", "ALPHA"] as AttendanceStatus[]).map((st) => (
                         <label
                           key={st}
                           className="pill"
                           style={{
                             cursor: "pointer",
-                            fontSize: 12,
-                            padding: "4px 8px",
-                            background: r.status === st ? "var(--accent)" : "transparent",
-                            fontWeight: r.status === st ? "bold" : "normal",
+                            fontSize: 13,
+                            padding: "8px 4px",
+                            textAlign: "center",
+                            minHeight: 44,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: r.status === st ? "var(--yellow)" : "var(--card)",
+                            fontWeight: r.status === st ? "900" : "600",
+                            border: "2px solid var(--ink)",
                           }}
                         >
                           <input
@@ -126,11 +132,11 @@ export default async function PresensiPage({
 
                     <input
                       className="input"
-                      style={{ width: 180, fontSize: 13 }}
+                      style={{ width: "100%", fontSize: 13, minHeight: 42 }}
                       type="text"
                       name={`ket_${r.studentId}`}
                       defaultValue={r.keterangan}
-                      placeholder="Ket / alasan..."
+                      placeholder="Keterangan / alasan (opsional)..."
                     />
                   </div>
                 </div>
@@ -170,15 +176,15 @@ export default async function PresensiPage({
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 12, marginTop: 16, alignItems: "center" }}>
-            <button className="btn btn-primary" type="submit" name="finish" value="0">
-              💾 Simpan Draf
-            </button>
-            <button className="btn btn-green" type="submit" name="finish" value="1">
+          <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
+            <button className="btn btn-green btn-block-mobile" type="submit" name="finish" value="1" style={{ minHeight: 48, fontSize: 15, flex: "1 1 auto" }}>
               ✅ Simpan & Tandai Selesai
             </button>
-            <a className="btn btn-ghost" href="/presensi">
-              ← Kembali ke Daftar
+            <button className="btn btn-primary btn-block-mobile" type="submit" name="finish" value="0" style={{ minHeight: 48, fontSize: 15, flex: "1 1 auto" }}>
+              💾 Simpan Draf
+            </button>
+            <a className="btn btn-ghost btn-block-mobile" href="/presensi" style={{ minHeight: 48, fontSize: 15, flex: "1 1 auto", textAlign: "center" }}>
+              ← Kembali
             </a>
           </div>
         </form>
