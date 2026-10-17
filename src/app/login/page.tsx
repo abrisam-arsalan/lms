@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata = {
-  title: "Masuk — LMS SMPN 5 Tegal",
+  title: "Masuk — Portal Panglima SMPN 5 Tegal",
   cacheControl: "no-store",
 };
 

@@ -37,10 +37,10 @@ export default function LoginPage() {
       <form className="auth-card" onSubmit={onSubmit}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="auth-logo" src="/assets/logo.png" alt="Logo SMPN 5 Tegal" />
-        <h1>LMS SMPN 5 Tegal</h1>
+        <h1>Portal Panglima</h1>
         <p className="auth-sub">
-          Masuk dengan <strong>NISN</strong> (siswa), <strong>NIP/username</strong> (guru),
-          atau username admin.
+          LMS, Presensi, dan MPI SMP Negeri 5 Tegal.<br />
+          Masuk dengan <strong>NISN</strong> (siswa), <strong>P+NISN</strong> (orang tua), <strong>NIP/Username</strong> (guru/admin).
         </p>
         <div className="field">
           <label className="field-label" htmlFor="username">Username / NISN</label>
@@ -50,8 +50,7 @@ export default function LoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
-            inputMode="numeric"
-            placeholder="mis. 0101306751"
+            placeholder="mis. 0012345678 / admin"
             required
           />
         </div>
