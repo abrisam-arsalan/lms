@@ -59,38 +59,45 @@ export default async function PengumumanPage({
 
   return (
     <AppShell user={user} active="/pengumuman">
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <span className="current">Pengumuman</span>
+      </div>
       <div className="page-head">
-        <h1>Pengumuman 📢</h1>
-        <p>{user.role === "SISWA" || user.role === "ORTU" ? "Informasi sekolah & kelasmu." : "Pengumuman dipindah dari aplikasi Presensi ke sini."}</p>
+        <h1>Warta &amp; Pengumuman Sekolah 📢</h1>
+        <p className="muted">{user.role === "SISWA" || user.role === "ORTU" ? "Informasi resmi sekolah dan agenda belajar rombel kelasmu." : "Pusat informasi dan edaran resmi civitas akademika SMPN 5 Tegal."}</p>
       </div>
 
       {canPost && (
         <div className="card">
-          <div className="card-head"><h2>➕ Buat pengumuman</h2></div>
+          <div className="card-head"><h2>➕ Buat Pengumuman Baru</h2></div>
           <div className="card-body">
-            {err && <p className="error">Judul & isi wajib diisi.</p>}
+            {err && <p className="error">Judul &amp; isi pengumuman wajib diisi.</p>}
             <form action={createAnnouncement}>
               <div className="field">
-                <label className="field-label">Judul</label>
-                <input className="input" name="judul" placeholder="mis. Jadwal Tengah Semester" required />
+                <label className="field-label">Judul Pengumuman</label>
+                <input className="input" name="judul" placeholder="mis. Jadwal Asesmen Sumatif Tengah Semester Genap" required />
               </div>
               <div className="field">
-                <label className="field-label">Isi</label>
-                <textarea className="input" name="isi" rows={4} required />
+                <label className="field-label">Isi Pengumuman Lengkap</label>
+                <textarea className="input" name="isi" rows={4} placeholder="Tuliskan isi pengumuman atau instruksi penting kepada warga sekolah…" required />
               </div>
-              <div className="field" style={{ maxWidth: 300 }}>
+              <div className="field" style={{ maxWidth: 360 }}>
                 <label className="field-label">
-                  Sasaran {user.role === "GURU" ? "(guru: pilih rombel binaanmu)" : ""}
+                  Sasaran Penerima {user.role === "GURU" ? "(Guru: Pilih Rombel Binaanmu)" : ""}
                 </label>
                 <select className="input" name="classId" defaultValue={user.role === "GURU" ? "" : "0"}>
-                  {user.role === "ADMIN" && <option value="0">📣 Seluruh sekolah</option>}
-                  {user.role === "GURU" && <option value="">— pilih rombel —</option>}
+                  {user.role === "ADMIN" && <option value="0">📣 Seluruh Sekolah (Semua Pengguna)</option>}
+                  {user.role === "GURU" && <option value="">— Pilih Rombel Binaan —</option>}
                   {kelasOptions.map((k) => (
-                    <option key={String(k.id)} value={String(k.id)}>Kelas {k.name}</option>
+                    <option key={String(k.id)} value={String(k.id)}>Rombel Kelas {k.name}</option>
                   ))}
                 </select>
               </div>
-              <button className="btn btn-primary" type="submit">Publikasikan + kabari siswa/ortu</button>
+              <div style={{ marginTop: 8 }}>
+                <button className="btn btn-primary" type="submit">📢 Publikasikan Pengumuman</button>
+              </div>
             </form>
           </div>
         </div>
@@ -101,23 +108,26 @@ export default async function PengumumanPage({
           <div className="card-head">
             <h2>{p.judul}</h2>
             <span className={`badge ${p.target === "SEMUA" ? "badge-yellow" : "badge-blue"}`}>
-              {p.target === "SEMUA" ? "SEMUA" : p.class?.name ?? "ROMBEL"}
+              {p.target === "SEMUA" ? "SEMUA PENGGUNA" : `KELAS ${p.class?.name ?? "ROMBEL"}`}
             </span>
           </div>
           <div className="card-body">
             <p className="prose">{p.isi}</p>
-            <p className="muted" style={{ marginTop: 8 }}>
-              {p.author.nama} · {new Date(p.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}
-            </p>
+            <div className="meta" style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+              <span>✍ Penulis: <b>{p.author.nama}</b> ({p.author.role})</span>
+              <span>· {new Date(p.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
+            </div>
             {(user.role === "ADMIN" || p.authorId === user.id) && (
-              <div style={{ marginTop: 8 }}>
-                <DangerSubmit action={deleteAnnouncement} hidden={{ id: String(p.id) }} confirmText={`Hapus "${p.judul}"?`}>🗑 hapus</DangerSubmit>
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--ink)" }}>
+                <DangerSubmit action={deleteAnnouncement} hidden={{ id: String(p.id) }} confirmText={`Hapus pengumuman "${p.judul}"?`}>
+                  🗑 Hapus Pengumuman
+                </DangerSubmit>
               </div>
             )}
           </div>
         </div>
       ))}
-      {!items.length && <div className="empty">Belum ada pengumuman.</div>}
+      {!items.length && <div className="empty">Belum ada pengumuman yang dipublikasikan.</div>}
     </AppShell>
   );
 }

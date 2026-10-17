@@ -8,21 +8,26 @@ export default async function TpListPage() {
 
   return (
     <AppShell user={user} active="/tp">
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <span className="current">Tujuan Pembelajaran</span>
+      </div>
       <div className="page-head">
-        <h1>Tujuan Pembelajaran 🎯</h1>
-        <p>Pilih rombel × mapel — jumlah &amp; isi TP kamu yang atur (kode mengikuti app kementerian, mis. TP.9220).</p>
+        <h1>Tujuan Pembelajaran (TP) 🎯</h1>
+        <p className="muted">Kelola daftar TP per rombel × mapel. Format kode selaras dengan template e-Rapor kementerian (mis. TP.9220).</p>
       </div>
       {assigns.length === 0 && (
-        <div className="empty">Belum ada penugasan rombel semester ini.</div>
+        <div className="empty">Belum ada penugasan mengajar rombel semester ini.</div>
       )}
       {assigns.map((a) => (
-        <a className="card" key={String(a.id)} href={`/tp/${a.id}`}>
-          <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <a className="card" key={String(a.id)} href={`/tp/${a.id}`} style={{ textDecoration: "none" }}>
+          <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
             <div>
               <h2>{a.class.name} · {a.subject.name}</h2>
-              <span className="muted">Guru: {a.teacher?.nama ?? "—"}</span>
+              <span className="muted">Guru Pengampu: {a.teacher?.nama ?? "—"}</span>
             </div>
-            <span className="pill">kelola TP →</span>
+            <span className="btn btn-sm btn-primary">Kelola TP →</span>
           </div>
         </a>
       ))}

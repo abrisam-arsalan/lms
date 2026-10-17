@@ -27,14 +27,21 @@ export default async function MpiPage({
   if (activeGame) {
     return (
       <AppShell user={user} active="/mpi">
-        <div style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <a href="/mpi">MPI Edukasi</a>
+          <span className="sep">&gt;</span>
+          <span className="current">{activeGame.title}</span>
+        </div>
+        <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 22 }}>
+            <h1>
               {activeGame.icon} {activeGame.title}
             </h1>
-            <p className="muted" style={{ margin: "4px 0 0 0" }}>{activeGame.desc}</p>
+            <p className="muted">{activeGame.desc}</p>
           </div>
-          <a className="btn btn-ghost" href="/mpi">
+          <a className="btn btn-sm" href="/mpi">
             ← Kembali ke Arena Game
           </a>
         </div>
@@ -44,11 +51,11 @@ export default async function MpiPage({
           style={{
             padding: 0,
             overflow: "hidden",
-            height: "calc(100vh - 160px)",
-            minHeight: 460,
-            maxHeight: 780,
-            border: "3px solid var(--border)",
-            boxShadow: "var(--shadow)",
+            height: "calc(100vh - 180px)",
+            minHeight: 480,
+            maxHeight: 820,
+            border: "var(--line)",
+            boxShadow: "var(--shadow-lg)",
           }}
         >
           <iframe
@@ -64,6 +71,11 @@ export default async function MpiPage({
 
   return (
     <AppShell user={user} active="/mpi">
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <span className="current">MPI Edukasi</span>
+      </div>
       <div className="page-head">
         <h1>Media Pembelajaran Interaktif (MPI) 🎮</h1>
         <p>Game edukasi interaktif berbasis web untuk pembelajaran aktif di kelas dan mandiri.</p>
@@ -78,12 +90,26 @@ export default async function MpiPage({
       >
         {DEFAULT_GAMES.map((g) => (
           <div key={g.slug} className="card" style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>{g.icon}</div>
+            <div className="card-body">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                <div style={{
+                  width: 48,
+                  height: 48,
+                  border: "var(--line)",
+                  background: "var(--yellow)",
+                  display: "grid",
+                  placeItems: "center",
+                  fontSize: 24,
+                  boxShadow: "2px 2px 0 var(--ink)",
+                }}>
+                  {g.icon}
+                </div>
+                <span className="badge badge-yellow">GAME INTERAKTIF</span>
+              </div>
               <h2 style={{ fontSize: 18, marginBottom: 6 }}>{g.title}</h2>
               <p className="muted" style={{ fontSize: 14 }}>{g.desc}</p>
             </div>
-            <div style={{ marginTop: 16 }}>
+            <div style={{ padding: "0 16px 16px" }}>
               <a className="btn btn-primary" style={{ width: "100%", textAlign: "center" }} href={`/mpi?game=${g.slug}`}>
                 Mainkan Game →
               </a>

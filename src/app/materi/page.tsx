@@ -51,11 +51,16 @@ export default async function MateriPage({
     );
     return (
       <AppShell user={user} active="/materi">
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <span className="current">Materi Belajar</span>
+        </div>
         <div className="page-head">
-          <h1>Materi 📖</h1>
+          <h1>Materi Pembelajaran 📖</h1>
           <p>{materials.length} materi terbit untuk kelasmu.</p>
         </div>
-        {materials.length === 0 && <div className="empty">Belum ada materi. Nanti guru yang mengunggah ke sini.</div>}
+        {materials.length === 0 && <div className="empty">Belum ada materi pembelajaran yang terbit.</div>}
         {materials.map((m) => (
           <div className="card" key={String(m.id)}>
             <div className="card-head">
@@ -72,13 +77,13 @@ export default async function MateriPage({
                   </a>
                 ))}
               </div>
-              <div style={{ marginTop: 8 }}>
+              <div style={{ marginTop: 12 }}>
                 {myReads.has(String(m.id)) ? (
-                  <span className="badge badge-green">✓ sudah dibaca</span>
+                  <span className="badge badge-green">✓ Sudah Dibaca</span>
                 ) : (
                   <form action={markRead} style={{ display: "inline" }}>
                     <input type="hidden" name="materialId" value={String(m.id)} />
-                    <button className="btn btn-sm" type="submit">✓ tandai sudah dibaca</button>
+                    <button className="btn btn-sm btn-primary" type="submit">✓ Tandai Selesai Dibaca</button>
                   </form>
                 )}
               </div>
@@ -102,19 +107,24 @@ export default async function MateriPage({
   if (!a) {
     return (
       <AppShell user={user} active="/materi">
-        <div className="page-head">
-          <h1>Materi 📖</h1>
-          <p>Pilih rombel × mapel untuk mengelola materi{user.role === "KEPSEK" ? " (mode baca)" : ""}.</p>
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <span className="current">Materi</span>
         </div>
-        {assigns.length === 0 && <div className="empty">Belum ada penugasan semester ini.</div>}
+        <div className="page-head">
+          <h1>Kelola Materi Pembelajaran 📖</h1>
+          <p>Pilih rombel × mapel untuk mengelola materi{user.role === "KEPSEK" ? " (mode pantau)" : ""}.</p>
+        </div>
+        {assigns.length === 0 && <div className="empty">Belum ada penugasan mengajar semester ini.</div>}
         {assigns.map((x) => (
-          <a className="card" key={String(x.id)} href={`/materi?a=${x.id}`}>
-            <div className="card-body" style={{ display: "flex", justifyContent: "space-between" }}>
+          <a className="card" key={String(x.id)} href={`/materi?a=${x.id}`} style={{ textDecoration: "none" }}>
+            <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
               <div>
                 <h2>{x.class.name} · {x.subject.name}</h2>
-                <span className="muted">Guru: {x.teacher?.nama ?? "—"}</span>
+                <span className="muted">Guru Pengampu: {x.teacher?.nama ?? "—"}</span>
               </div>
-              <span className="pill">→</span>
+              <span className="btn btn-sm btn-primary">Kelola Materi →</span>
             </div>
           </a>
         ))}
@@ -143,46 +153,57 @@ export default async function MateriPage({
 
   return (
     <AppShell user={user} active="/materi">
-      <div className="page-head">
-        <h1>
-          Materi — {assignment.class.name} · {assignment.subject.name}
-        </h1>
-        <p><a href={`/tp/${assignmentId}`}>🎯 atur TP</a> · <a href={`/tugas?a=${assignmentId}`}>📝 kelola tugas</a></p>
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <a href="/materi">Materi</a>
+        <span className="sep">&gt;</span>
+        <span className="current">{assignment.class.name} · {assignment.subject.name}</span>
+      </div>
+      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>Materi — {assignment.class.name} · {assignment.subject.name}</h1>
+          <p className="muted">Kelola bahan ajar, modul PDF, dan keterkaitan TP kelas.</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <a className="btn btn-sm" href={`/tp/${assignmentId}`}>🎯 Atur TP</a>
+          <a className="btn btn-sm" href={`/tugas?a=${assignmentId}`}>📝 Kelola Tugas</a>
+        </div>
       </div>
 
       {!ro && (
         <div className="card">
-          <div className="card-head"><h2>➕ Materi baru</h2></div>
+          <div className="card-head"><h2>➕ Tambah Materi Baru</h2></div>
           <div className="card-body">
             <form action={createMateri}>
               <input type="hidden" name="assignmentId" value={String(assignmentId)} />
               <div className="field">
-                <label className="field-label">Judul</label>
+                <label className="field-label">Judul Materi</label>
                 <input className="input" name="judul" placeholder="mis. Data Pribadi & Identitas Digital" required />
               </div>
               <div className="form-grid two">
                 <div className="field">
-                  <label className="field-label">TP terkait (opsional)</label>
+                  <label className="field-label">Tujuan Pembelajaran (TP) Terkait</label>
                   <select className="input" name="tpId" defaultValue="">
-                    <option value="">— tanpa TP —</option>
+                    <option value="">— Tanpa TP Terikat —</option>
                     {assignment.learningTargets.map((tp) => (
                       <option key={String(tp.id)} value={String(tp.id)}>{tp.code} — {tp.content.slice(0, 50)}</option>
                     ))}
                   </select>
                 </div>
                 <div className="field">
-                  <label className="field-label">Status</label>
+                  <label className="field-label">Status Publikasi</label>
                   <select className="input" name="status" defaultValue="TERBIT">
-                    <option value="TERBIT">Terbit sekarang</option>
-                    <option value="DRAF">Draf (belum tampil ke siswa)</option>
+                    <option value="TERBIT">Terbitkan Sekarang (Terlihat Siswa)</option>
+                    <option value="DRAF">Draf (Disimpan Dulu)</option>
                   </select>
                 </div>
               </div>
               <div className="field">
-                <label className="field-label">Isi materi (teks; baris baru = paragraf)</label>
-                <textarea className="input" name="body" rows={6} placeholder="Tulis penjelasan materi…" />
+                <label className="field-label">Isi Materi Pembelajaran</label>
+                <textarea className="input" name="body" rows={6} placeholder="Tulis teks materi, rangkuman, atau instruksi belajar…" />
               </div>
-              <button className="btn btn-primary" type="submit">Simpan</button>
+              <button className="btn btn-primary" type="submit">Simpan &amp; Terbitkan Materi</button>
             </form>
           </div>
         </div>
@@ -195,21 +216,23 @@ export default async function MateriPage({
             <span className={`badge ${m.status === "TERBIT" ? "badge-green" : "badge-neutral"}`}>{m.status}</span>
           </div>
           <div className="card-body">
-            <p className="muted" style={{ marginBottom: 6 }}>
-              {m.tp && <span className="pill">{m.tp.code}</span>}{" "}
-              Urutan {m.urutan} · terbit {fmt(m.publishAt)} · 👁 dibaca {m._count.reads}/{jmlSiswa}
+            <p className="muted" style={{ marginBottom: 8, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {m.tp && <span className="pill">{m.tp.code}</span>}
+              <span>Urutan {m.urutan}</span>
+              <span>· Terbit {fmt(m.publishAt)}</span>
+              <span className="badge badge-yellow">👁 Dibaca {m._count.reads} / {jmlSiswa} siswa</span>
             </p>
             <p className="prose">{m.body}</p>
-            <div style={{ margin: "8px 0" }}>
+            <div style={{ margin: "10px 0" }}>
               {m.files.map((f) => (
-                <span key={String(f.id)}>
+                <span key={String(f.id)} style={{ display: "inline-flex", alignItems: "center", gap: 4, marginRight: 8, marginBottom: 6 }}>
                   <a className="filechip" href={`/api/file/${f.id}?k=m`}>📎 {f.nama} ({size(f.sizeBytes)})</a>
                   {!ro && (
                     <DangerSubmit
                       action={deleteMateriFile}
                       hidden={{ id: String(f.id), assignmentId: String(assignmentId) }}
                       confirmText={`Hapus lampiran "${f.nama}"?`}
-                      btnClass="btn btn-sm"
+                      btnClass="btn btn-sm btn-danger"
                     >
                       ✕
                     </DangerSubmit>
@@ -218,36 +241,45 @@ export default async function MateriPage({
               ))}
             </div>
             {!ro && (
-              <div className="row-actions" style={{ marginTop: 8 }}>
+              <div className="row-actions" style={{ marginTop: 12, paddingTop: 10, borderTop: "2px dashed var(--ink)" }}>
                 <form action={uploadMateriFile} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                   <input type="hidden" name="materialId" value={String(m.id)} />
-                  <input className="input" style={{ width: "auto", minWidth: 200 }} type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" required />
-                  <button className="btn btn-sm btn-primary" type="submit">Unggah</button>
+                  <input className="input" style={{ width: "auto", minWidth: 220 }} type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" required />
+                  <button className="btn btn-sm btn-primary" type="submit">+ Unggah Berkas</button>
                 </form>
-                <details>
-                  <summary className="pill" style={{ cursor: "pointer" }}>✏️ ubah</summary>
-                  <form action={updateMateri} style={{ marginTop: 8, maxWidth: 620 }}>
+                <details style={{ width: "100%", marginTop: 8 }}>
+                  <summary className="btn btn-sm" style={{ cursor: "pointer", display: "inline-flex" }}>✏️ Ubah Materi</summary>
+                  <form action={updateMateri} style={{ marginTop: 12, maxWidth: 640 }}>
                     <input type="hidden" name="id" value={String(m.id)} />
                     <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-                    <div className="field"><label className="field-label">Judul</label>
-                      <input className="input" name="judul" defaultValue={m.judul} required /></div>
+                    <div className="field">
+                      <label className="field-label">Judul Materi</label>
+                      <input className="input" name="judul" defaultValue={m.judul} required />
+                    </div>
                     <div className="form-grid two">
-                      <div className="field"><label className="field-label">TP</label>
+                      <div className="field">
+                        <label className="field-label">TP Terkait</label>
                         <select className="input" name="tpId" defaultValue={m.tpId ? String(m.tpId) : ""}>
-                          <option value="">— tanpa TP —</option>
+                          <option value="">— Tanpa TP —</option>
                           {assignment.learningTargets.map((tp) => (
                             <option key={String(tp.id)} value={String(tp.id)}>{tp.code}</option>
                           ))}
-                        </select></div>
-                      <div className="field"><label className="field-label">Status</label>
+                        </select>
+                      </div>
+                      <div className="field">
+                        <label className="field-label">Status</label>
                         <select className="input" name="status" defaultValue={m.status}>
-                          <option value="TERBIT">TERBIT</option><option value="DRAF">DRAF</option>
-                        </select></div>
+                          <option value="TERBIT">TERBIT</option>
+                          <option value="DRAF">DRAF</option>
+                        </select>
+                      </div>
                     </div>
-                    <div className="field"><label className="field-label">Isi</label>
-                      <textarea className="input" name="body" rows={6} defaultValue={m.body} /></div>
-                    <button className="btn btn-sm btn-primary" type="submit">Perbarui</button>
+                    <div className="field">
+                      <label className="field-label">Isi Materi</label>
+                      <textarea className="input" name="body" rows={6} defaultValue={m.body} />
+                    </div>
+                    <button className="btn btn-sm btn-primary" type="submit">Perbarui Materi</button>
                   </form>
                 </details>
                 <DangerSubmit
@@ -255,7 +287,7 @@ export default async function MateriPage({
                   hidden={{ id: String(m.id), assignmentId: String(assignmentId) }}
                   confirmText={`Hapus materi "${m.judul}"?`}
                 >
-                  🗑 Hapus
+                  🗑 Hapus Materi
                 </DangerSubmit>
               </div>
             )}

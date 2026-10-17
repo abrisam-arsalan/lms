@@ -41,27 +41,32 @@ export default async function RekapPresensiPage({
 
     return (
       <AppShell user={user} active="/rekap-presensi">
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <span className="current">Kehadiran Saya</span>
+        </div>
         <div className="page-head">
-          <h1>Riwayat Kehadiran Saya 📅</h1>
-          <p>Rekap kehadiran dan catatan kegiatan belajar di kelas.</p>
+          <h1>Riwayat Kehadiran Siswa 📅</h1>
+          <p>Rekapitulasi kehadiran dan catatan jurnal materi belajar di kelas.</p>
         </div>
 
-        <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>✅ Hadir</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.HADIR}</span>
+        <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 16 }}>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>✅ Hadir</h3>
+            <span style={{ fontSize: 26, fontWeight: 900, color: "var(--teal)" }}>{summary.HADIR}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>🤒 Sakit</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.SAKIT}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>🤒 Sakit</h3>
+            <span style={{ fontSize: 26, fontWeight: 900 }}>{summary.SAKIT}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>📄 Izin</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.IZIN}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>📄 Izin</h3>
+            <span style={{ fontSize: 26, fontWeight: 900 }}>{summary.IZIN}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>❌ Alpa</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.ALPHA}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>❌ Alpa</h3>
+            <span style={{ fontSize: 26, fontWeight: 900, color: "var(--magenta)" }}>{summary.ALPHA}</span>
           </div>
         </div>
 
@@ -70,21 +75,21 @@ export default async function RekapPresensiPage({
             <h2>Daftar Catatan Absensi Terakhir</h2>
           </div>
           <div className="card-body">
-            {records.length === 0 && <div className="empty">Belum ada data kehadiran.</div>}
+            {records.length === 0 && <div className="empty">Belum ada data kehadiran siswa tercatat.</div>}
             {records.map((r) => (
-              <div key={String(r.id)} className="list-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+              <div key={String(r.id)} className="list-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px" }}>
                 <div>
-                  <b>{r.session.schedule.assignment.subject.name}</b>
+                  <b style={{ fontSize: 16 }}>{r.session.schedule.assignment.subject.name}</b>
                   <div className="meta">
                     {new Date(r.session.date).toLocaleDateString("id-ID", { dateStyle: "medium" })} · Guru: {r.session.schedule.assignment.teacher.nama}
                   </div>
                   {r.session.materi && <div style={{ fontSize: 13, marginTop: 4 }}>📖 Materi: {r.session.materi}</div>}
                 </div>
-                <div>
-                  <span className={`badge ${r.status === "HADIR" ? "badge-green" : r.status === "SAKIT" ? "badge-yellow" : "badge-red"}`}>
+                <div style={{ textAlign: "right" }}>
+                  <span className={`badge ${r.status === "HADIR" ? "badge-green" : r.status === "SAKIT" ? "badge-yellow" : "badge-red"}`} style={{ fontSize: 13 }}>
                     {r.status}
                   </span>
-                  {r.keterangan && <div className="meta" style={{ textAlign: "right" }}>{r.keterangan}</div>}
+                  {r.keterangan && <div className="meta" style={{ marginTop: 2 }}>{r.keterangan}</div>}
                 </div>
               </div>
             ))}
@@ -130,51 +135,56 @@ export default async function RekapPresensiPage({
 
     return (
       <AppShell user={user} active="/rekap-presensi">
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <span className="current">Kehadiran Anak</span>
+        </div>
         <div className="page-head">
-          <h1>Kehadiran Anak: {currentChild?.nama ?? "—"} 📅</h1>
+          <h1>Kehadiran Siswa: {currentChild?.nama ?? "—"} 📅</h1>
           <p>Pantau kehadiran harian dan jurnal materi pembelajaran anak Anda.</p>
         </div>
 
-        <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>✅ Hadir</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.HADIR}</span>
+        <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 16 }}>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>✅ Hadir</h3>
+            <span style={{ fontSize: 26, fontWeight: 900, color: "var(--teal)" }}>{summary.HADIR}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>🤒 Sakit</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.SAKIT}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>🤒 Sakit</h3>
+            <span style={{ fontSize: 26, fontWeight: 900 }}>{summary.SAKIT}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>📄 Izin</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.IZIN}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>📄 Izin</h3>
+            <span style={{ fontSize: 26, fontWeight: 900 }}>{summary.IZIN}</span>
           </div>
-          <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-            <h3 style={{ fontSize: 14 }}>❌ Alpa</h3>
-            <span style={{ fontSize: 22, fontWeight: 900 }}>{summary.ALPHA}</span>
+          <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+            <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>❌ Alpa</h3>
+            <span style={{ fontSize: 26, fontWeight: 900, color: "var(--magenta)" }}>{summary.ALPHA}</span>
           </div>
         </div>
 
         <div className="card">
           <div className="card-head">
-            <h2>Riwayat Sesi & Kehadiran</h2>
+            <h2>Riwayat Sesi &amp; Kehadiran</h2>
           </div>
           <div className="card-body">
             {records.length === 0 && <div className="empty">Belum ada riwayat kehadiran tercatat.</div>}
             {records.map((r) => (
-              <div key={String(r.id)} className="list-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
+              <div key={String(r.id)} className="list-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px" }}>
                 <div>
-                  <b>{r.session.schedule.assignment.subject.name}</b>
+                  <b style={{ fontSize: 16 }}>{r.session.schedule.assignment.subject.name}</b>
                   <div className="meta">
                     {new Date(r.session.date).toLocaleDateString("id-ID", { dateStyle: "medium" })} · Guru: {r.session.schedule.assignment.teacher.nama}
                   </div>
                   {r.session.materi && <div style={{ fontSize: 13, marginTop: 4 }}>📖 Materi: {r.session.materi}</div>}
-                  {r.session.catatanKelas && <div style={{ fontSize: 12, color: "var(--muted)" }}>📌 Catatan guru: {r.session.catatanKelas}</div>}
+                  {r.session.catatanKelas && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>📌 Catatan guru: {r.session.catatanKelas}</div>}
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <span className={`badge ${r.status === "HADIR" ? "badge-green" : r.status === "SAKIT" ? "badge-yellow" : "badge-red"}`}>
+                  <span className={`badge ${r.status === "HADIR" ? "badge-green" : r.status === "SAKIT" ? "badge-yellow" : "badge-red"}`} style={{ fontSize: 13 }}>
                     {r.status}
                   </span>
-                  {r.keterangan && <div className="meta">{r.keterangan}</div>}
+                  {r.keterangan && <div className="meta" style={{ marginTop: 2 }}>{r.keterangan}</div>}
                 </div>
               </div>
             ))}
@@ -215,68 +225,76 @@ export default async function RekapPresensiPage({
 
   return (
     <AppShell user={user} active="/rekap-presensi">
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <span className="current">Rekapitulasi Presensi</span>
+      </div>
       <div className="page-head">
-        <h1>Rekapitulasi Kehadiran & Jurnal 📊</h1>
-        <p>Monitoring kehadiran harian dan keterlaksanaan sesi mengajar kelas.</p>
+        <h1>Rekapitulasi Kehadiran &amp; Jurnal Mengajar 📊</h1>
+        <p className="muted">Monitoring kehadiran harian dan keterlaksanaan jurnal sesi mengajar kelas.</p>
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <form method="get" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-          <div>
-            <label className="field-label" style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>
-              Rombel / Kelas
-            </label>
-            <select name="classId" className="input" defaultValue={rawClassId ?? ""}>
-              <option value="">Semua Rombel</option>
-              {classes.map((c) => (
-                <option key={String(c.id)} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="card-head"><h2>🔍 Filter Rekap Presensi</h2></div>
+        <div className="card-body">
+          <form method="get" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <label className="field-label" style={{ display: "block", marginBottom: 6 }}>
+                Rombel / Kelas
+              </label>
+              <select name="classId" className="input" defaultValue={rawClassId ?? ""}>
+                <option value="">Semua Rombel</option>
+                {classes.map((c) => (
+                  <option key={String(c.id)} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div>
-            <label className="field-label" style={{ display: "block", marginBottom: 4, fontWeight: "bold" }}>
-              Tanggal
-            </label>
-            <input type="date" name="date" className="input" defaultValue={selectedDateStr} required />
-          </div>
+            <div style={{ minWidth: 160 }}>
+              <label className="field-label" style={{ display: "block", marginBottom: 6 }}>
+                Tanggal Pelaksanaan
+              </label>
+              <input type="date" name="date" className="input" defaultValue={selectedDateStr} required />
+            </div>
 
-          <button className="btn btn-primary" type="submit">
-            Tampilkan
-          </button>
-        </form>
+            <button className="btn btn-primary" type="submit" style={{ minWidth: 130 }}>
+              Tampilkan Data
+            </button>
+          </form>
+        </div>
       </div>
 
-      <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 10, marginBottom: 16 }}>
-        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-          <h3 style={{ fontSize: 13 }}>📝 Sesi Selesai</h3>
-          <span style={{ fontSize: 22, fontWeight: 900 }}>
+      <div className="stat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 16 }}>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+          <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>📝 Sesi Selesai</h3>
+          <span style={{ fontSize: 24, fontWeight: 900 }}>
             {sessions.filter((s) => s.status === "SELESAI").length} / {sessions.length}
           </span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-          <h3 style={{ fontSize: 13 }}>✅ Hadir</h3>
-          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalHadir}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+          <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>✅ Hadir</h3>
+          <span style={{ fontSize: 24, fontWeight: 900, color: "var(--teal)" }}>{totalHadir}</span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-          <h3 style={{ fontSize: 13 }}>🤒 Sakit</h3>
-          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalSakit}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+          <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>🤒 Sakit</h3>
+          <span style={{ fontSize: 24, fontWeight: 900 }}>{totalSakit}</span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-          <h3 style={{ fontSize: 13 }}>📄 Izin</h3>
-          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalIzin}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+          <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>📄 Izin</h3>
+          <span style={{ fontSize: 24, fontWeight: 900 }}>{totalIzin}</span>
         </div>
-        <div className="card" style={{ textAlign: "center", margin: 0, padding: 12 }}>
-          <h3 style={{ fontSize: 13 }}>❌ Alpa</h3>
-          <span style={{ fontSize: 22, fontWeight: 900 }}>{totalAlpa}</span>
+        <div className="card" style={{ textAlign: "center", margin: 0, padding: 14 }}>
+          <h3 style={{ fontSize: 13, textTransform: "uppercase" }}>❌ Alpa</h3>
+          <span style={{ fontSize: 24, fontWeight: 900, color: "var(--magenta)" }}>{totalAlpa}</span>
         </div>
       </div>
 
       <div className="card">
         <div className="card-head">
-          <h2>Sesi Mengajar ({sessions.length})</h2>
+          <h2>Sesi Mengajar Terjadwal ({sessions.length})</h2>
           <span className="pill">{selectedDateStr}</span>
         </div>
         <div className="card-body">
@@ -289,8 +307,7 @@ export default async function RekapPresensiPage({
                 key={String(s.id)}
                 className="list-row"
                 style={{
-                  padding: "12px 0",
-                  borderBottom: "1px solid var(--border)",
+                  padding: "14px",
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "flex-start",
@@ -298,21 +315,21 @@ export default async function RekapPresensiPage({
                   gap: 12,
                 }}
               >
-                <div>
+                <div style={{ flex: 1, minWidth: 240 }}>
                   <h3 style={{ margin: 0, fontSize: 16 }}>
                     {s.schedule.assignment.class.name} · {s.schedule.assignment.subject.name}
                   </h3>
-                  <div className="meta">
+                  <div className="meta" style={{ marginTop: 4 }}>
                     ⏰ {s.schedule.startTime}–{s.schedule.endTime} · Guru: {s.schedule.assignment.teacher.nama} · Status:{" "}
                     <span className={`badge ${s.status === "SELESAI" ? "badge-green" : "badge-yellow"}`}>{s.status}</span>
                   </div>
-                  {s.materi && <div style={{ fontSize: 13, marginTop: 4 }}>📖 <b>Materi:</b> {s.materi}</div>}
-                  {s.catatanKelas && <div style={{ fontSize: 12, color: "var(--muted)" }}>📌 <b>Catatan:</b> {s.catatanKelas}</div>}
+                  {s.materi && <div style={{ fontSize: 13, marginTop: 6 }}>📖 <b>Materi:</b> {s.materi}</div>}
+                  {s.catatanKelas && <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>📌 <b>Catatan:</b> {s.catatanKelas}</div>}
                 </div>
 
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: 800 }}>
-                    Hadir: {h} / {s.records.length} siswa
+                    Kehadiran: <span className="badge badge-green">{h} / {s.records.length} Siswa</span>
                   </div>
                   {skl.length > 0 && (
                     <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
@@ -320,9 +337,11 @@ export default async function RekapPresensiPage({
                     </div>
                   )}
                   {user.role === "GURU" && s.schedule.assignment.teacherId === user.id && (
-                    <a className="btn btn-sm btn-ghost" style={{ marginTop: 6, display: "inline-block" }} href={`/presensi?session=${s.id}`}>
-                      ✏️ Edit Presensi
-                    </a>
+                    <div style={{ marginTop: 8 }}>
+                      <a className="btn btn-sm btn-primary" href={`/presensi?session=${s.id}`}>
+                        ✏️ Edit Presensi
+                      </a>
+                    </div>
                   )}
                 </div>
               </div>

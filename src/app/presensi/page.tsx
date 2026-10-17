@@ -290,12 +290,14 @@ export default async function PresensiPage({
                 <div className="meta" style={{ marginTop: 4 }}>
                   {s.room ? `Ruang ${s.room}` : "Kelas reguler"}
                 </div>
-                <form action={openSession} style={{ marginTop: 10 }}>
+                <form action={openSession} style={{ marginTop: 12 }}>
                   <input type="hidden" name="scheduleId" value={String(s.id)} />
-                  <input type="date" name="date" defaultValue={todayStr} className="input" style={{ width: "100%", marginBottom: 6, fontSize: 13 }} required />
-                  <button className="btn btn-sm btn-ghost" type="submit" style={{ width: "100%" }}>
-                    Buka Tanggal Ini →
-                  </button>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input type="date" name="date" defaultValue={todayStr} className="input" style={{ flex: 1, minHeight: 40, fontSize: 13, padding: "6px 8px" }} required />
+                    <button className="btn btn-sm btn-primary" type="submit" style={{ whiteSpace: "nowrap" }}>
+                      Buka →
+                    </button>
+                  </div>
                 </form>
               </div>
             ))}

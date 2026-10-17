@@ -14,30 +14,37 @@ export default async function NotifikasiPage() {
 
   return (
     <AppShell user={user} active="/notifikasi">
-      <div className="page-head">
-        <h1>Notifikasi 🔔</h1>
-        <p>{unread ? `${unread} belum dibaca` : "Semua sudah dibaca."}</p>
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <span className="current">Notifikasi</span>
+      </div>
+      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>Pemberitahuan &amp; Notifikasi 🔔</h1>
+          <p className="muted">{unread ? `${unread} notifikasi belum dibaca` : "Semua notifikasi telah dibaca."}</p>
+        </div>
         {unread > 0 && (
-          <form action={markAll} style={{ marginTop: 8 }}>
-            <button className="btn btn-sm">✓ Tandai semua dibaca</button>
+          <form action={markAll}>
+            <button className="btn btn-sm btn-primary">✓ Tandai Semua Dibaca</button>
           </form>
         )}
       </div>
       {rows.map((n) => (
-        <div key={String(n.id)} className="list-row" style={n.readAt ? { opacity: 0.55 } : undefined}>
+        <div key={String(n.id)} className="list-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", ...(n.readAt ? { opacity: 0.6 } : { borderLeft: "6px solid var(--teal)" }) }}>
           <div style={{ flex: 1, minWidth: 220 }}>
-            {n.link ? <a href={n.link}><b>{n.message}</b></a> : <b>{n.message}</b>}
-            <div className="meta">{new Date(n.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</div>
+            {n.link ? <a href={n.link} style={{ textDecoration: "none" }}><b style={{ fontSize: 15 }}>{n.message}</b></a> : <b style={{ fontSize: 15 }}>{n.message}</b>}
+            <div className="meta" style={{ marginTop: 4 }}>{new Date(n.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</div>
           </div>
           {!n.readAt && (
             <form action={markRead}>
               <input type="hidden" name="id" value={String(n.id)} />
-              <button className="btn btn-sm">✓</button>
+              <button className="btn btn-sm btn-primary" title="Tandai sudah dibaca">✓ Selesai</button>
             </form>
           )}
         </div>
       ))}
-      {!rows.length && <div className="empty">Belum ada notifikasi.</div>}
+      {!rows.length && <div className="empty">Belum ada notifikasi baru untuk akun Anda.</div>}
     </AppShell>
   );
 }

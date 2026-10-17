@@ -35,13 +35,27 @@ export default async function NilaiPage({
     if (!a) {
       return (
         <AppShell user={user} active="/nilai">
-          <div className="page-head"><h1>Nilai 📊</h1><p>Pilih mapel untuk melihat ketercapaian TP.</p></div>
+          <div className="breadcrumb">
+            <a href="/dashboard">Beranda</a>
+            <span className="sep">&gt;</span>
+            <span className="current">Nilai &amp; TP</span>
+          </div>
+          <div className="page-head">
+            <h1>Ketercapaian TP &amp; Nilai Rapor 📊</h1>
+            <p>Pilih mata pelajaran untuk melihat ketercapaian Tujuan Pembelajaran.</p>
+          </div>
           {assigns.map((x) => (
-            <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`}>
-              <div className="card-body"><h2>{x.subject.name} <span className="pill">{x.class.name}</span></h2></div>
+            <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`} style={{ textDecoration: "none" }}>
+              <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <h2>{x.subject.name}</h2>
+                  <span className="muted">Kelas {x.class.name}</span>
+                </div>
+                <span className="btn btn-sm btn-primary">Lihat Ketercapaian →</span>
+              </div>
             </a>
           ))}
-          {!assigns.length && <div className="empty">Belum ada data.</div>}
+          {!assigns.length && <div className="empty">Belum ada data mata pelajaran untuk kelasmu.</div>}
         </AppShell>
       );
     }
@@ -56,22 +70,49 @@ export default async function NilaiPage({
     const m = new Map(skor.map((s) => [String(s.tpId), Number(s.score)]));
     return (
       <AppShell user={user} active="/nilai">
-        <div className="page-head">
-          <h1>{asg.subject.name} — {asg.class.name}</h1>
-          <p>Ketercapaian Tujuan Pembelajaran.</p>
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <a href="/nilai">Nilai</a>
+          <span className="sep">&gt;</span>
+          <span className="current">{asg.subject.name} ({asg.class.name})</span>
         </div>
-        <div className="card"><div className="card-body">
-          {tps.map((tp) => (
-            <div className="list-row" key={String(tp.id)}>
-              <div style={{ flex: 1 }}><span className="pill">{tp.code}</span> <b>{tp.content}</b></div>
-              <span className={`badge ${m.has(String(tp.id)) ? "badge-green" : "badge-neutral"}`}>
-                {m.has(String(tp.id)) ? Math.round(m.get(String(tp.id))!) : "belum"}
-              </span>
+        <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1>{asg.subject.name} — {asg.class.name}</h1>
+            <p className="muted">Ketercapaian Tujuan Pembelajaran (TP) dan Predikat Nilai Rapor.</p>
+          </div>
+          <a className="btn btn-sm" href="/nilai">← Kembali ke Daftar Mapel</a>
+        </div>
+
+        {rapor && (
+          <div className="card" style={{ background: "var(--yellow)" }}>
+            <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <div>
+                <span style={{ fontSize: 12, fontWeight: 900, textTransform: "uppercase" }}>Prediksi Nilai Akhir / Rapor</span>
+                <div style={{ fontSize: 26, fontWeight: 900 }}>{Number(rapor.score)} / 100</div>
+              </div>
+              <span className="badge badge-green">TEREKAP OTOMATIS</span>
             </div>
-          ))}
-          {!tps.length && <div className="empty">Guru belum menyusun TP.</div>}
-          {rapor && <p style={{ marginTop: 12, fontWeight: 900, fontSize: 16 }}>Nilai rapor: {Number(rapor.score)}</p>}
-        </div></div>
+          </div>
+        )}
+
+        <div className="card">
+          <div className="card-head"><h2>Daftar Ketercapaian TP</h2></div>
+          <div className="card-body">
+            {tps.map((tp) => (
+              <div className="list-row" key={String(tp.id)}>
+                <div style={{ flex: 1 }}>
+                  <span className="pill">{tp.code}</span> <b>{tp.content}</b>
+                </div>
+                <span className={`badge ${m.has(String(tp.id)) ? "badge-green" : "badge-neutral"}`} style={{ fontSize: 14 }}>
+                  {m.has(String(tp.id)) ? `Skor: ${Math.round(m.get(String(tp.id))!)}` : "Belum Dinilai"}
+                </span>
+              </div>
+            ))}
+            {!tps.length && <div className="empty">Guru pengampu belum menyusun TP untuk mata pelajaran ini.</div>}
+          </div>
+        </div>
       </AppShell>
     );
   }
@@ -88,19 +129,24 @@ export default async function NilaiPage({
   if (!a) {
     return (
       <AppShell user={user} active="/nilai">
-        <div className="page-head">
-          <h1>Gradebook 📊</h1>
-          <p>Matriks nilai per Tujuan Pembelajaran. Pilih rombel × mapel.</p>
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <span className="current">Gradebook</span>
         </div>
-        {!assigns.length && <div className="empty">Belum ada penugasan.</div>}
+        <div className="page-head">
+          <h1>Matriks Nilai &amp; Gradebook 📊</h1>
+          <p>Ketercapaian Tujuan Pembelajaran per rombel × mapel untuk persiapan e-Rapor.</p>
+        </div>
+        {!assigns.length && <div className="empty">Belum ada penugasan mengajar semester ini.</div>}
         {assigns.map((x) => (
-          <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`}>
-            <div className="card-body" style={{ display: "flex", justifyContent: "space-between" }}>
+          <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`} style={{ textDecoration: "none" }}>
+            <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
               <div>
                 <h2>{x.class.name} · {x.subject.name}</h2>
-                <span className="muted">Guru: {x.teacher?.nama ?? "—"}</span>
+                <span className="muted">Guru Pengampu: {x.teacher?.nama ?? "—"}</span>
               </div>
-              <span className="pill">matriks →</span>
+              <span className="btn btn-sm btn-primary">Buka Matriks Nilai →</span>
             </div>
           </a>
         ))}
@@ -142,47 +188,61 @@ export default async function NilaiPage({
 
   return (
     <AppShell user={user} active="/nilai">
-      <div className="page-head">
-        <h1>{asg.subject.name} — {asg.class.name}</h1>
-        <p>
-          {asg.learningTargets.length} TP · {asg.manualAssessments.length} asesmen manual · {students.length} siswa
-          {ok === "rekap" && <> · <span className="badge badge-green">↻ {n} sel TP diperbarui</span></>}
-          {err === "nilai" && <span className="error"> Nilai harus 0–100.</span>}
-        </p>
-        <p style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 8 }}>
-          <a className="btn btn-sm btn-primary" href={exportBase}>📥 Excel {asg.class.tingkat} (1 file, 1 sheet/rombel)</a>
-          <a className="btn btn-sm" href={`${exportBase}&fmt=csv`}>CSV</a>
-          <a className="btn btn-sm" href={`/tp/${assignmentId}`}>🎯 TP</a>
-        </p>
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <a href="/nilai">Gradebook</a>
+        <span className="sep">&gt;</span>
+        <span className="current">{asg.subject.name} — {asg.class.name}</span>
+      </div>
+      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>{asg.subject.name} — {asg.class.name}</h1>
+          <p className="muted">
+            {asg.learningTargets.length} TP Terdaftar · {asg.manualAssessments.length} Asesmen Manual · {students.length} Siswa
+            {ok === "rekap" && <> · <span className="badge badge-green">↻ {n} Nilai TP Berhasil Dihitung</span></>}
+            {err === "nilai" && <span className="error"> Nilai harus berupa angka 0–100.</span>}
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <a className="btn btn-sm btn-primary" href={exportBase}>📥 Ekspor Excel ({asg.class.tingkat})</a>
+          <a className="btn btn-sm" href={`${exportBase}&fmt=csv`}>📥 Ekspor CSV</a>
+          <a className="btn btn-sm" href={`/tp/${assignmentId}`}>🎯 Atur TP</a>
+        </div>
       </div>
 
       {canEdit && (
         <div className="card">
-          <div className="card-head"><h2>⚙️ Rekap otomatis</h2></div>
+          <div className="card-head"><h2>⚙️ Rekapitulasi Nilai Otomatis</h2></div>
           <div className="card-body">
             <div className="row-actions">
               <form action={recalculate}>
                 <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-                <button className="btn btn-sm btn-primary">↻ Hitung TP dari nilai tugas & asesmen → lalu nilai rapor</button>
+                <button className="btn btn-sm btn-primary" type="submit">↻ Hitung Nilai TP &amp; Rapor Otomatis</button>
               </form>
               <form action={recalculate}>
                 <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                 <input type="hidden" name="force" value="1" />
-                <button className="btn btn-sm">↻↻ Paksa (timpa koreksi manual)</button>
+                <button className="btn btn-sm" type="submit">↻ Timpa Koreksi Manual</button>
               </form>
             </div>
-            <p className="muted" style={{ marginTop: 8 }}>Agregasi: rata-rata semua Grade tugas/asesmen yang menaut TP → sel TP (AUTO); rapor = rata-rata TP.</p>
+            <p className="muted" style={{ marginTop: 8 }}>
+              💡 Agregasi otomatis menghitung rata-rata nilai tugas/asesmen yang terhubung ke TP, kemudian menghasilkan rekomendasi nilai rapor.
+            </p>
           </div>
         </div>
       )}
 
       <div className="card">
-        <div className="card-head"><h2>Matriks Ketercapaian TP</h2><span className="pill">✋ TR = perlu peningkatan · ⭐ OP = sangat tercapai</span></div>
+        <div className="card-head">
+          <h2>Matriks Ketercapaian TP &amp; Rapor</h2>
+          <span className="pill">✋ TR = Perlu Peningkatan · ⭐ OP = Sangat Tercapai</span>
+        </div>
         <div className="table-wrap">
           <table className="table matrix">
             <thead>
               <tr>
-                <th>Siswa</th>
+                <th>Nama Siswa</th>
                 {asg.learningTargets.map((tp) => <th key={String(tp.id)} title={tp.content}>{tp.code}</th>)}
                 {asg.manualAssessments.map((ma) => <th key={String(ma.id)}>🖊 {ma.nama}{ma.tp ? ` (${ma.tp.code})` : ""}</th>)}
                 <th>NILAI RAPOR</th>
@@ -195,41 +255,41 @@ export default async function NilaiPage({
                 const kurangValid = rv !== null && rv < 100 && (countFlags(st.id, "PERLU_PENINGKATAN") < 1 || countFlags(st.id, "SANGAT_TERCAPAI") < 1);
                 return (
                   <tr key={String(st.id)}>
-                    <td>
+                    <td style={{ minWidth: 160 }}>
                       <b>{st.nama}</b>
-                      <div className="muted" style={{ fontSize: 11 }}>{st.nisn ?? st.id}</div>
-                      {kurangValid && <span className="badge badge-yellow" title="rapor <100 → wajib ≥1 TP ✋ & ≥1 TP ⭐ (aturan kementerian)">⚠ TR/OP</span>}
+                      <div className="muted" style={{ fontSize: 11 }}>NISN: {st.nisn ?? "—"}</div>
+                      {kurangValid && <span className="badge badge-yellow" title="Rapor <100 wajib memiliki minimal 1 TP ✋ dan 1 TP ⭐">⚠ TR/OP</span>}
                     </td>
                     {asg.learningTargets.map((tp) => {
                       const s = skor.get(`${tp.id}|${st.id}`);
                       const isTr = flagSet.has(`${tp.id}|${st.id}|PERLU_PENINGKATAN`);
                       const isOp = flagSet.has(`${tp.id}|${st.id}|SANGAT_TERCAPAI`);
                       return (
-                        <td key={String(tp.id)}>
+                        <td key={String(tp.id)} style={{ textAlign: "center", minWidth: 84 }}>
                           {canEdit ? (
                             <>
                               <form action={setTpScore} className="cellform">
                                 <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                                 <input type="hidden" name="tpId" value={String(tp.id)} />
                                 <input type="hidden" name="studentId" value={String(st.id)} />
-                                <input className="input" style={{ width: 62, minWidth: 62 }} type="number" min={0} max={100} name="score"
+                                <input className="input" style={{ width: 68, minWidth: 68, textAlign: "center" }} type="number" min={0} max={100} name="score"
                                   defaultValue={s ? Number(s.score).toString() : ""} placeholder="—" />
-                                {s?.source === "MANUAL" && <span title="koreksi manual — timpa dgn 'Paksa'" style={{ fontSize: 10 }}>✎</span>}
+                                {s?.source === "MANUAL" && <span title="Koreksi manual" style={{ fontSize: 11 }}>✎</span>}
                               </form>
-                              <div style={{ display: "flex", gap: 3, marginTop: 3 }}>
+                              <div style={{ display: "flex", gap: 4, marginTop: 4, justifyContent: "center" }}>
                                 <form action={toggleFlag} className="mini">
                                   <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                                   <input type="hidden" name="tpId" value={String(tp.id)} />
                                   <input type="hidden" name="studentId" value={String(st.id)} />
                                   <input type="hidden" name="type" value="PERLU_PENINGKATAN" />
-                                  <button className={`btn btn-sm ${isTr ? "btn-danger" : ""}`} style={{ padding: "1px 6px", minHeight: 22 }} title="perlu peningkatan">✋</button>
+                                  <button className={`btn btn-sm ${isTr ? "btn-danger" : ""}`} style={{ padding: "4px 8px", minHeight: 34, minWidth: 34, fontSize: 14 }} title="Tandai: Perlu Peningkatan (TR)">✋</button>
                                 </form>
                                 <form action={toggleFlag} className="mini">
                                   <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                                   <input type="hidden" name="tpId" value={String(tp.id)} />
                                   <input type="hidden" name="studentId" value={String(st.id)} />
                                   <input type="hidden" name="type" value="SANGAT_TERCAPAI" />
-                                  <button className={`btn btn-sm ${isOp ? "btn-primary" : ""}`} style={{ padding: "1px 6px", minHeight: 22 }} title="sangat tercapai">⭐</button>
+                                  <button className={`btn btn-sm ${isOp ? "btn-primary" : ""}`} style={{ padding: "4px 8px", minHeight: 34, minWidth: 34, fontSize: 14 }} title="Tandai: Sangat Tercapai (OP)">⭐</button>
                                 </form>
                               </div>
                             </>

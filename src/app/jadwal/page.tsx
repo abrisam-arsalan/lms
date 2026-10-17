@@ -29,6 +29,8 @@ function WeekView({ rows, today }: { rows: Awaited<ReturnType<typeof loadSchedul
     byDay.set(r.day, arr);
   }
   const days = [...byDay.keys()].sort((a, b) => a - b).filter((d) => d >= 1);
+  const nowStr = new Date().toTimeString().slice(0, 5);
+
   return (
     <>
       {days.map((d) => (
@@ -38,22 +40,38 @@ function WeekView({ rows, today }: { rows: Awaited<ReturnType<typeof loadSchedul
             {d === today && <span className="badge badge-green">HARI INI</span>}
           </div>
           <div className="card-body">
-            {byDay.get(d)!.map((s) => (
-              <div className="list-row" key={String(s.id)} style={{ marginBottom: 8 }}>
-                <div style={{ flex: 1 }}>
-                  <b>{s.assignment.subject.name}</b>{" "}
-                  <span className="muted">{s.startTime}–{s.endTime}{s.room ? ` · ${s.room}` : ""}</span>
-                  <div className="meta">{s.assignment.class.name} · {s.assignment.teacher?.nama ?? "—"}</div>
+            {byDay.get(d)!.map((s) => {
+              const isToday = s.day === today;
+              const isOngoing = isToday && nowStr >= s.startTime && nowStr <= s.endTime;
+              const isPast = isToday && nowStr > s.endTime;
+              return (
+                <div className="list-row" key={String(s.id)} style={{ marginBottom: 10 }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+                      <b style={{ fontSize: 16 }}>{s.assignment.subject.name}</b>
+                      <span className="badge badge-yellow">⏰ {s.startTime} – {s.endTime}</span>
+                      {s.room && <span className="pill">Ruang: {s.room}</span>}
+                      {isToday && (
+                        isOngoing ? (
+                          <span className="badge badge-green">SEDANG BERLANGSUNG</span>
+                        ) : isPast ? (
+                          <span className="badge badge-neutral">SELESAI</span>
+                        ) : (
+                          <span className="badge badge-yellow">AKAN DATANG</span>
+                        )
+                      )}
+                    </div>
+                    <div className="meta">
+                      Kelas {s.assignment.class.name} · Guru Pengampu: {s.assignment.teacher?.nama ?? "—"}
+                    </div>
+                  </div>
                 </div>
-                {s.day === today && (
-                  <span className="badge badge-yellow">{new Date().toTimeString().slice(0, 5) >= s.startTime ? "berlangsung/selesai" : "akan datang"}</span>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
-      {!days.length && <div className="empty">Belum ada jadwal untuk penugasan ini.</div>}
+      {!days.length && <div className="empty">Belum ada jadwal pelajaran untuk penugasan ini.</div>}
     </>
   );
 }
@@ -82,16 +100,30 @@ export default async function JadwalPage({
     const asg = rows[0]?.assignment;
     return (
       <AppShell user={user} active="/jadwal">
-        <div className="page-head">
-          <h1>Jadwal{asg ? ` — ${asg.class.name} · ${asg.subject.name}` : ""}</h1>
-          {user.role === "ADMIN" && <p>Mode kelola — tambah/hapus baris jadwal rombel ini.</p>}
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <a href="/jadwal">Jadwal</a>
+          <span className="sep">&gt;</span>
+          <span className="current">{asg ? `${asg.class.name} · ${asg.subject.name}` : "Rombel"}</span>
+        </div>
+        <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1>Jadwal Pelajaran{asg ? ` — ${asg.class.name} · ${asg.subject.name}` : ""}</h1>
+            {user.role === "ADMIN" ? (
+              <p className="muted">Mode kelola — tambah atau hapus slot jam pelajaran untuk rombel ini.</p>
+            ) : (
+              <p className="muted">Jadwal tatap muka mingguan untuk mata pelajaran ini.</p>
+            )}
+          </div>
+          <a className="btn btn-sm" href="/jadwal">← Kembali ke Jadwal</a>
         </div>
 
         {user.role === "ADMIN" && (
           <div className="card">
-            <div className="card-head"><h2>➕ Tambah jam</h2></div>
+            <div className="card-head"><h2>➕ Tambah Jam Pelajaran</h2></div>
             <div className="card-body">
-              <form action={addSchedule} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "end" }}>
+              <form action={addSchedule} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
                 <input type="hidden" name="assignmentId" value={a} />
                 <div className="field" style={{ margin: 0, width: 130 }}>
                   <label className="field-label">Hari</label>
@@ -107,11 +139,11 @@ export default async function JadwalPage({
                   <label className="field-label">Selesai</label>
                   <input className="input" type="time" name="end" required defaultValue="09:00" />
                 </div>
-                <div className="field" style={{ margin: 0, width: 120 }}>
-                  <label className="field-label">Ruang</label>
+                <div className="field" style={{ margin: 0, width: 130 }}>
+                  <label className="field-label">Ruang Kelas</label>
                   <input className="input" name="room" placeholder="mis. Lab 1" />
                 </div>
-                <button className="btn btn-sm btn-primary">Tambah</button>
+                <button className="btn btn-primary" type="submit">+ Tambah Jam</button>
               </form>
             </div>
           </div>
@@ -120,12 +152,12 @@ export default async function JadwalPage({
         <WeekView rows={rows} today={today} />
         {user.role === "ADMIN" && rows.length > 0 && (
           <div className="card">
-            <div className="card-head"><h2>Hapus baris</h2></div>
+            <div className="card-head"><h2>Hapus Baris Jadwal</h2></div>
             <div className="card-body">
               {rows.map((s) => (
-                <div key={String(s.id)} className="row-actions" style={{ marginBottom: 6 }}>
-                  <span className="pill">{DAYS[s.day]} {s.startTime}–{s.endTime}</span>
-                  <DangerSubmit action={deleteSchedule} hidden={{ id: String(s.id), assignmentId: a }} confirmText="Hapus baris jadwal ini?">✕ hapus</DangerSubmit>
+                <div key={String(s.id)} className="row-actions" style={{ marginBottom: 8 }}>
+                  <span className="pill">{DAYS[s.day]} : {s.startTime} – {s.endTime}</span>
+                  <DangerSubmit action={deleteSchedule} hidden={{ id: String(s.id), assignmentId: a }} confirmText="Hapus baris jadwal ini?">✕ Hapus</DangerSubmit>
                 </div>
               ))}
             </div>
@@ -150,7 +182,15 @@ export default async function JadwalPage({
     const rows = await loadSchedules({ id: { in: assigns.map((x) => x.id) } });
     return (
       <AppShell user={user} active="/jadwal">
-        <div className="page-head"><h1>Jadwal 🗓️</h1><p>{clsId ? "Jadwal mingguan kelasmu." : "Kelas belum ditautkan — hubungi admin."}</p></div>
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <span className="current">Jadwal Pelajaran</span>
+        </div>
+        <div className="page-head">
+          <h1>Jadwal Pelajaran Mingguan 🗓️</h1>
+          <p>{clsId ? "Jadwal tatap muka mingguan kelasmu di SMPN 5 Tegal." : "Kelas belum ditautkan — hubungi admin."}</p>
+        </div>
         <WeekView rows={rows} today={today} />
       </AppShell>
     );
@@ -161,7 +201,15 @@ export default async function JadwalPage({
     const rows = await loadSchedules({ id: { in: my.map((x) => x.id) } });
     return (
       <AppShell user={user} active="/jadwal">
-        <div className="page-head"><h1>Jadwal Mengajar 🗓️</h1><p>{my.length} rombel × mapel semester ini.</p></div>
+        <div className="breadcrumb">
+          <a href="/dashboard">Beranda</a>
+          <span className="sep">&gt;</span>
+          <span className="current">Jadwal Mengajar</span>
+        </div>
+        <div className="page-head">
+          <h1>Jadwal Mengajar Mingguan 🗓️</h1>
+          <p>{my.length} rombel × mapel yang kamu ampu semester ini.</p>
+        </div>
         <WeekView rows={rows} today={today} />
       </AppShell>
     );
@@ -174,9 +222,14 @@ export default async function JadwalPage({
   });
   return (
     <AppShell user={user} active="/jadwal">
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <span className="current">Jadwal</span>
+      </div>
       <div className="page-head">
-        <h1>Jadwal 🗓️</h1>
-        <p>{user.role === "ADMIN" ? "Kelola" : "Lihat"} jadwal per rombel × mapel.</p>
+        <h1>Jadwal Pelajaran Per Rombel 🗓️</h1>
+        <p>{user.role === "ADMIN" ? "Kelola" : "Pantau"} jadwal pelajaran per rombel × mapel.</p>
       </div>
       {classes.map((c) => (
         <div className="card" key={String(c.id)}>

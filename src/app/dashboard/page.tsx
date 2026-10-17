@@ -4,15 +4,16 @@ import { currentSemester, classAssignments, studentClassId, childrenOfClassIds, 
 import { DAYS } from "@/lib/notify";
 import AppShell from "@/components/app-shell";
 
-const MODULES: { nama: string; href: string; desc: string; status: string; aktif?: boolean }[] = [
-  { nama: "Presensi", href: "/presensi", desc: "Isi absensi sesi mengajar hari ini", status: "MODUL BARU", aktif: true },
-  { nama: "Materi", href: "/materi", desc: "Baca materi & unduh lampiran per rombel", status: "LMS", aktif: true },
-  { nama: "Tugas", href: "/tugas", desc: "Kumpulkan tugas & lihat nilai", status: "LMS", aktif: true },
-  { nama: "Nilai", href: "/nilai", desc: "Matriks ketercapaian TP & unduh rapor", status: "LMS", aktif: true },
-  { nama: "Jadwal", href: "/jadwal", desc: "Jadwal pelajaran hari ini & seminggu", status: "TERPADU", aktif: true },
-  { nama: "MPI Edukasi", href: "/mpi", desc: "Game interaktif & media pembelajaran", status: "GAME", aktif: true },
-  { nama: "Ujian CBT", href: "/ujian", desc: "Masuk ruang ujian & lihat hasil", status: "CBT", aktif: true },
-  { nama: "Pengumuman", href: "/pengumuman", desc: "Informasi dan pengumuman sekolah", status: "INFO", aktif: true },
+const MODULES: { nama: string; href: string; desc: string; icon: string; status: string; roles: string[] }[] = [
+  { nama: "Presensi", href: "/presensi", desc: "Isi absensi sesi mengajar hari ini", icon: "✅", status: "PRESENSI", roles: ["GURU", "ADMIN"] },
+  { nama: "Kehadiran", href: "/rekap-presensi", desc: "Pantau rekap kehadiran belajar", icon: "📅", status: "PRESENSI", roles: ["SISWA", "ORTU", "KEPSEK"] },
+  { nama: "Materi Belajar", href: "/materi", desc: "Akses bahan ajar & modul", icon: "📖", status: "LMS", roles: ["GURU", "SISWA", "ORTU", "KEPSEK"] },
+  { nama: "Tugas Siswa", href: "/tugas", desc: "Kumpulkan tugas & pantau nilai", icon: "📝", status: "LMS", roles: ["GURU", "SISWA"] },
+  { nama: "Rekap Nilai TP", href: "/nilai", desc: "Ketercapaian TP & capaian rapor", icon: "📊", status: "LMS", roles: ["GURU", "SISWA", "ORTU", "KEPSEK"] },
+  { nama: "Jadwal Mingguan", href: "/jadwal", desc: "Jadwal pelajaran hari ini & pekan", icon: "🗓️", status: "TERPADU", roles: ["GURU", "SISWA", "ORTU", "KEPSEK", "ADMIN"] },
+  { nama: "MPI Edukasi", href: "/mpi", desc: "Game interaktif & media belajar", icon: "🎮", status: "GAME", roles: ["GURU", "SISWA", "KEPSEK"] },
+  { nama: "Ujian CBT", href: "/ujian", desc: "Platform asesmen & tes formatif", icon: "📋", status: "CBT", roles: ["GURU", "SISWA", "ORTU", "ADMIN"] },
+  { nama: "Pengumuman", href: "/pengumuman", desc: "Warta & agenda penting sekolah", icon: "📢", status: "INFO", roles: ["GURU", "SISWA", "ORTU", "KEPSEK", "ADMIN"] },
 ];
 
 export default async function DashboardPage() {
@@ -199,14 +200,23 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <h2 style={{ margin: "4px 0 12px" }}>Modul Portal Panglima</h2>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "16px 0 12px" }}>
+        <h2 style={{ margin: 0 }}>Modul Portal Panglima</h2>
+        <span className="pill">{user.role}</span>
+      </div>
       <div className="grid">
-        {MODULES.map((m) => (
-          <a className="card" key={m.nama} href={m.href} style={{ display: "block", color: "inherit" }}>
+        {MODULES.filter((m) => m.roles.includes(user.role)).map((m) => (
+          <a className="card" key={m.nama} href={m.href} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div className="card-body">
-              <h2 style={{ marginBottom: 4 }}>{m.nama}</h2>
-              <p className="muted" style={{ marginBottom: 10 }}>{m.desc}</p>
-              <span className={`badge ${m.aktif ? "badge-green" : "badge-neutral"}`}>{m.status}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                <span style={{ fontSize: 28 }}>{m.icon}</span>
+                <span className="badge badge-yellow">{m.status}</span>
+              </div>
+              <h2 style={{ marginBottom: 4, fontSize: 16 }}>{m.nama}</h2>
+              <p className="muted" style={{ fontSize: 13 }}>{m.desc}</p>
+            </div>
+            <div style={{ padding: "0 16px 14px", textAlign: "right" }}>
+              <span style={{ fontWeight: 900, fontSize: 13 }}>Buka Modul →</span>
             </div>
           </a>
         ))}

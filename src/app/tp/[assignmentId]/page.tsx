@@ -32,23 +32,35 @@ export default async function TpEditPage({
 
   return (
     <AppShell user={user} active="/tp">
-      <div className="page-head">
-        <h1>
-          TP — {assignment.class.name} · {assignment.subject.name}
-        </h1>
-        <p>Guru: {assignment.teacher?.nama ?? "—"}</p>
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <a href="/tp">Tujuan Pembelajaran</a>
+        <span className="sep">&gt;</span>
+        <span className="current">{assignment.class.name} · {assignment.subject.name}</span>
+      </div>
+      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>TP — {assignment.class.name} · {assignment.subject.name}</h1>
+          <p className="muted">Guru Pengampu: {assignment.teacher?.nama ?? "—"}</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <a className="btn btn-sm" href={`/materi?a=${assignmentId}`}>📖 Kelola Materi</a>
+          <a className="btn btn-sm" href={`/tugas?a=${assignmentId}`}>📝 Kelola Tugas</a>
+          <a className="btn btn-sm" href={`/nilai?a=${assignmentId}`}>📊 Buka Gradebook</a>
+        </div>
       </div>
 
       <div className="card">
-        <div className="card-head"><h2>➕ Tambah TP</h2></div>
+        <div className="card-head"><h2>➕ Tambah Tujuan Pembelajaran (TP)</h2></div>
         <div className="card-body">
-          {err && <p className="error">Kode &amp; isi TP wajib diisi.</p>}
-          {imp === "toobig" && <p className="error">File lebih dari 2 MB — pastikan file template kementerian.</p>}
-          {imp === "empty" && <p className="error">Lembar kerja tidak terbaca.</p>}
+          {err && <p className="error">Kode &amp; isi deskripsi TP wajib diisi.</p>}
+          {imp === "toobig" && <p className="error">File lebih dari 2 MB — pastikan file template e-Rapor resmi kementerian.</p>}
+          {imp === "empty" && <p className="error">Lembar kerja Excel tidak terbaca atau format kolom tidak sesuai.</p>}
           {imp && imp !== "toobig" && imp !== "empty" && (
-            <p className="badge badge-green" style={{ display: "block", marginBottom: 10 }}>
-              ✔ Impor: {imp} TP dibuat{skip ? `, ${skip} dilewati (kode sudah ada)` : ""}
-              {roster ? ` · template memuat ${roster} siswa` : ""}
+            <p className="badge badge-green" style={{ display: "block", marginBottom: 12, padding: "8px 12px" }}>
+              ✔ Berhasil Mengimpor: {imp} TP dibuat{skip ? `, ${skip} dilewati (kode sudah ada)` : ""}
+              {roster ? ` · Template memuat ${roster} data siswa` : ""}
             </p>
           )}
           <form action={createTp}>
@@ -56,82 +68,79 @@ export default async function TpEditPage({
             <div className="form-grid two">
               <div className="field">
                 <label className="field-label">Kode TP (mis. TP.9220)</label>
-                <input className="input" name="code" placeholder="TP." required />
+                <input className="input" name="code" placeholder="TP.1 / TP.9220" required />
               </div>
               <div className="field">
-                <label className="field-label">Isi / tujuan pembelajaran</label>
-                <input className="input" name="content" placeholder="mis. melindungi data pribadi…" required />
+                <label className="field-label">Isi / Capaian Pembelajaran</label>
+                <input className="input" name="content" placeholder="mis. Memahami perlindungan data pribadi dan privasi digital…" required />
               </div>
             </div>
-            <button className="btn btn-primary" type="submit">Simpan TP</button>
+            <button className="btn btn-primary" type="submit">+ Simpan TP</button>
           </form>
-          <hr style={{ border: 0, borderTop: "2px dashed var(--ink)", margin: "14px 0" }} />
-          <p className="muted" style={{ marginBottom: 6 }}>
-            ⚡ <b>Salin cepat dari app kementerian:</b> unggah file template import rapor (format
-            <i> "FORMAT IMPORT NILAI RAPOR …"</i>) — kode &amp; isi TP langsung dibuat.
+          <hr style={{ border: 0, borderTop: "2px dashed var(--ink)", margin: "16px 0" }} />
+          <p className="muted" style={{ marginBottom: 8 }}>
+            ⚡ <b>Salin Cepat dari Template e-Rapor:</b> Unggah file format import nilai rapor (format
+            <i> "FORMAT IMPORT NILAI RAPOR … .xlsx"</i>) — kode &amp; deskripsi TP akan dibuat otomatis.
           </p>
-          <form action={importTpTemplate} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <form action={importTpTemplate} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-            <input className="input" style={{ width: "auto", minWidth: 230 }} type="file" name="file" accept=".xlsx" required />
-            <button className="btn btn-sm btn-primary" type="submit">Impor TP</button>
+            <input className="input" style={{ width: "auto", minWidth: 240 }} type="file" name="file" accept=".xlsx" required />
+            <button className="btn btn-sm btn-primary" type="submit">📥 Unggah &amp; Impor TP</button>
           </form>
         </div>
       </div>
 
       <div className="card">
         <div className="card-head">
-          <h2>Daftar TP ({assignment.learningTargets.length})</h2>
-          <span className="pill">urutan = tampilan ke siswa</span>
+          <h2>Daftar Tujuan Pembelajaran ({assignment.learningTargets.length})</h2>
+          <span className="pill">Urutan tampil di portal</span>
         </div>
         <div className="card-body">
           {assignment.learningTargets.length === 0 && (
-            <div className="empty">Belum ada TP. Tambahkan di atas — jumlah bebas, sesuai app kementerian.</div>
+            <div className="empty">Belum ada TP. Tambahkan secara manual di atas atau impor langsung dari file Excel e-Rapor.</div>
           )}
           {assignment.learningTargets.map((tp) => (
             <div className="list-row" key={String(tp.id)}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <span className="badge badge-blue">{tp.urutan}</span>{" "}
-                <b>{tp.code}</b>
-                <div className="muted">{tp.content}</div>
-                <details style={{ marginTop: 6 }}>
-                  <summary style={{ cursor: "pointer", fontWeight: 800, fontSize: 12.5 }}>✏️ ubah</summary>
-                  <form action={updateTp} style={{ marginTop: 8, maxWidth: 560 }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+                  <span className="badge badge-blue">Urutan #{tp.urutan}</span>
+                  <span className="pill" style={{ fontWeight: 900 }}>{tp.code}</span>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, margin: "4px 0" }}>{tp.content}</div>
+                <details style={{ marginTop: 8 }}>
+                  <summary className="btn btn-sm" style={{ cursor: "pointer", display: "inline-flex" }}>✏️ Ubah TP</summary>
+                  <form action={updateTp} style={{ marginTop: 10, maxWidth: 580 }}>
                     <input type="hidden" name="id" value={String(tp.id)} />
                     <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                     <div className="form-grid two">
                       <div className="field">
-                        <label className="field-label">Kode</label>
+                        <label className="field-label">Kode TP</label>
                         <input className="input" name="code" defaultValue={tp.code} required />
                       </div>
                       <div className="field">
-                        <label className="field-label">Urutan</label>
+                        <label className="field-label">Nomor Urutan</label>
                         <input className="input" name="urutan" type="number" min={0} defaultValue={tp.urutan} />
                       </div>
                     </div>
                     <div className="field">
-                      <label className="field-label">Isi</label>
+                      <label className="field-label">Deskripsi Capaian TP</label>
                       <input className="input" name="content" defaultValue={tp.content} required />
                     </div>
-                    <button className="btn btn-sm btn-primary" type="submit">Perbarui</button>
+                    <button className="btn btn-sm btn-primary" type="submit">Perbarui TP</button>
                   </form>
                 </details>
               </div>
               <DangerSubmit
                 action={deleteTp}
                 hidden={{ id: String(tp.id), assignmentId: String(assignmentId) }}
-                confirmText={`Hapus ${tp.code}? Materi/tugas yang merujuknya akan kehilangan tag TP.`}
+                confirmText={`Hapus ${tp.code}? Materi dan tugas yang terhubung akan kehilangan tag TP ini.`}
               >
-                🗑 Hapus
+                🗑 Hapus TP
               </DangerSubmit>
             </div>
           ))}
         </div>
       </div>
-
-      <p className="muted" style={{ textAlign: "center" }}>
-        <a href={`/materi?a=${assignmentId}`}>→ kelola materi utk TP ini</a> ·{" "}
-        <a href={`/tugas?a=${assignmentId}`}>→ kelola tugas</a>
-      </p>
     </AppShell>
   );
 }
