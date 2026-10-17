@@ -227,9 +227,17 @@ export default async function JadwalPage({
         <span className="sep">&gt;</span>
         <span className="current">Jadwal</span>
       </div>
-      <div className="page-head">
-        <h1>Jadwal Pelajaran Per Rombel 🗓️</h1>
-        <p>{user.role === "ADMIN" ? "Kelola" : "Pantau"} jadwal pelajaran per rombel × mapel.</p>
+      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>Jadwal Pelajaran Per Rombel 🗓️</h1>
+          <p>{user.role === "ADMIN" ? "Kelola" : "Pantau"} jadwal pelajaran per rombel × mapel.</p>
+        </div>
+        {user.role === "ADMIN" && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <a className="btn btn-sm btn-yellow" href="/admin/import">📥 Impor Jadwal CSV</a>
+            <a className="btn btn-sm" href="/api/templates/jadwal" download>📋 Template CSV</a>
+          </div>
+        )}
       </div>
       {classes.map((c) => (
         <div className="card" key={String(c.id)}>

@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   /^\/api\/auth\//,
   /^\/api\/v1\//,
   /^\/api\/handoff\//,
+  /^\/api\/templates\//,
   /^\/healthz$/,
   /^\/_next\//,
 ];
