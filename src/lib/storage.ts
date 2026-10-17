@@ -20,6 +20,17 @@ export async function saveUpload(file: File, maxMb = MAX_FILE_MB): Promise<strin
   return storedName;
 }
 
+export async function saveFile(bytes: Buffer, originalName: string, maxMb = MAX_FILE_MB): Promise<{ storedName: string }> {
+  if (bytes.length === 0) throw new Error("File kosong");
+  if (bytes.length > maxMb * 1024 * 1024) throw new Error(`Ukuran file > ${maxMb} MB`);
+  const ext = path.extname(originalName).toLowerCase();
+  if (ext && !SAFE_EXT.test(ext)) throw new Error(`Jenis file ${ext} tidak diizinkan`);
+  const storedName = `${Date.now()}-${crypto.randomUUID()}${ext || ""}`;
+  await fs.mkdir(STORAGE_DIR, { recursive: true });
+  await fs.writeFile(path.join(STORAGE_DIR, storedName), bytes);
+  return { storedName };
+}
+
 export async function readStored(storedName: string): Promise<Buffer> {
   // cegah path traversal
   const safe = path.basename(storedName);

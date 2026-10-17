@@ -49,9 +49,9 @@ export async function computeAutoTpScores(assignmentId: bigint) {
 export async function recomputeReports(assignmentId: bigint) {
   const [tpScores, students] = await Promise.all([
     prisma.tpScore.findMany({ where: { tp: { assignmentId } } }),
-    prisma.student.findMany({
-      where: { class: { assignments: { some: { id: assignmentId } } }, user: { deletedAt: null, isActive: true } },
-      select: { userId: true },
+    prisma.user.findMany({
+      where: { classRef: { assignments: { some: { id: assignmentId } } }, role: "SISWA", deletedAt: null, isActive: true },
+      select: { id: true },
     }),
   ]);
   const perSiswa = new Map<string, number[]>();
@@ -62,12 +62,12 @@ export async function recomputeReports(assignmentId: bigint) {
   }
   let n = 0;
   for (const st of students) {
-    const arr = perSiswa.get(String(st.userId));
+    const arr = perSiswa.get(String(st.id));
     if (arr && arr.length) {
       const avg = Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 100) / 100;
       await prisma.reportScore.upsert({
-        where: { assignmentId_studentId: { assignmentId, studentId: st.userId } },
-        create: { assignmentId, studentId: st.userId, score: avg },
+        where: { assignmentId_studentId: { assignmentId, studentId: st.id } },
+        create: { assignmentId, studentId: st.id, score: avg },
         update: { score: avg },
       });
       n++;

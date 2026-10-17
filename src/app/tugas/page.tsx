@@ -7,7 +7,7 @@ import {
 } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
-import { createTask, deleteTask, addTaskFile, submitTask, gradeSubmission, markDone, updateTask } from "./actions";
+import { createTask, deleteTask, uploadTaskFile, submitTask, gradeSubmission, markCompletedByTeacher, updateTask } from "./actions";
 
 const fmt = (d: Date | null) =>
   d ? new Date(d).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—";
@@ -41,22 +41,22 @@ export default async function TugasPage({
       const task = await prisma.task.findUnique({
         where: { id: taskId },
         include: {
-          assignment: { include: { subject: true, class: true, teacher: { include: { user: { select: { id: true } } } } } },
+          assignment: { include: { subject: true, class: true, teacher: { select: { id: true } } } },
           tp: true,
           files: true,
           submissions: {
-            include: { student: { select: { nama: true, username: true } }, files: true, grade: true },
+            include: { student: { select: { nama: true, username: true } }, files: true, grades: true },
             orderBy: { student: { nama: "asc" } },
           },
         },
       });
       if (!task) notFound();
-      if (task.assignment.teacher?.user.id !== user.id && user.role !== "ADMIN") redirect(`/tugas?a=${task.assignmentId}`);
+      if (task.assignment.teacher?.id !== user.id && user.role !== "ADMIN") redirect(`/tugas?a=${task.assignmentId}`);
       const sudah = new Set(task.submissions.map((s) => String(s.studentId)));
-      const belum = await prisma.student.findMany({
-        where: { classId: task.assignment.classId, user: { isActive: true, deletedAt: null } },
-        include: { user: { select: { nama: true } } },
-        orderBy: { user: { nama: "asc" } },
+      const belum = await prisma.user.findMany({
+        where: { classId: task.assignment.classId, role: "SISWA", isActive: true, deletedAt: null },
+        select: { id: true, nama: true },
+        orderBy: { nama: "asc" },
       });
 
       return (
@@ -79,7 +79,7 @@ export default async function TugasPage({
                   <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=t`}>📎 {f.nama}</a>
                 ))}
               </div>
-              <form action={addTaskFile} style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+              <form action={uploadTaskFile} style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
                 <input type="hidden" name="assignmentId" value={String(task.assignmentId)} />
                 <input type="hidden" name="taskId" value={String(task.id)} />
                 <input className="input" style={{ width: "auto", minWidth: 220 }} type="file" name="file" required />
@@ -95,30 +95,33 @@ export default async function TugasPage({
             </div>
             <div className="card-body">
               {task.submissions.length === 0 && <div className="empty">Belum ada yang mengumpulkan.</div>}
-              {task.submissions.map((s) => (
-                <div className="list-row" key={String(s.id)}>
-                  <div style={{ flex: 1, minWidth: 240 }}>
-                    <b>{s.student.nama}</b>{" "}
-                    <span className={`badge ${s.status === "LATE" ? "badge-red" : "badge-green"}`}>
-                      {s.status === "LATE" ? "TERLAMBAT" : "TEPAT WAKTU"}
-                    </span>
-                    <div className="meta">{fmt(s.submittedAt)}{s.revisiCount > 0 && ` · revisi ${s.revisiCount}`}</div>
-                    {s.text && <p className="prose" style={{ marginTop: 6, fontSize: 13.5 }}>{s.text.slice(0, 400)}</p>}
-                    <div style={{ margin: "6px 0" }}>
-                      {s.files.map((f) => (
-                        <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=s`}>📎 {f.nama}</a>
-                      ))}
+              {task.submissions.map((s) => {
+                const gr = s.grades[0];
+                return (
+                  <div className="list-row" key={String(s.id)}>
+                    <div style={{ flex: 1, minWidth: 240 }}>
+                      <b>{s.student.nama}</b>{" "}
+                      <span className={`badge ${s.status === "LATE" ? "badge-red" : "badge-green"}`}>
+                        {s.status === "LATE" ? "TERLAMBAT" : "TEPAT WAKTU"}
+                      </span>
+                      <div className="meta">{fmt(s.submittedAt)}{s.revisiCount > 0 && ` · revisi ${s.revisiCount}`}</div>
+                      {s.text && <p className="prose" style={{ marginTop: 6, fontSize: 13.5 }}>{s.text.slice(0, 400)}</p>}
+                      <div style={{ margin: "6px 0" }}>
+                        {s.files.map((f) => (
+                          <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=s`}>📎 {f.nama}</a>
+                        ))}
+                      </div>
+                      <form action={gradeSubmission} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <input type="hidden" name="submissionId" value={String(s.id)} />
+                        <input className="input" style={{ width: 90 }} type="number" name="score" min={0} max={100} step={1}
+                          defaultValue={gr ? Number(gr.score).toString() : ""} placeholder="Nilai" required />
+                        <input className="input" style={{ width: 220 }} name="feedback" defaultValue={gr?.feedback ?? ""} placeholder="Umpan balik (opsional)" />
+                        <button className="btn btn-sm btn-primary">{gr ? "Perbarui nilai" : "Nilai"}</button>
+                      </form>
                     </div>
-                    <form action={gradeSubmission} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                      <input type="hidden" name="submissionId" value={String(s.id)} />
-                      <input className="input" style={{ width: 90 }} type="number" name="score" min={0} max={100} step={1}
-                        defaultValue={s.grade ? Number(s.grade.score).toString() : ""} placeholder="Nilai" required />
-                      <input className="input" style={{ width: 220 }} name="feedback" defaultValue={s.grade?.feedback ?? ""} placeholder="Umpan balik (opsional)" />
-                      <button className="btn btn-sm btn-primary">{s.grade ? "Perbarui nilai" : "Nilai"}</button>
-                    </form>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -126,13 +129,13 @@ export default async function TugasPage({
             <div className="card">
               <div className="card-head"><h2>Belum mengumpulkan ({belum.length})</h2></div>
               <div className="card-body">
-                {belum.filter((b) => !sudah.has(String(b.userId))).map((b) => (
+                {belum.filter((b) => !sudah.has(String(b.id))).map((b) => (
                   <span key={String(b.id)} className="pill" style={{ margin: "2px 4px 2px 0", display: "inline-flex", alignItems: "center", gap: 6 }}>
-                    {b.user.nama}
-                    <form action={markDone} style={{ display: "inline" }}>
+                    {b.nama}
+                    <form action={markCompletedByTeacher} style={{ display: "inline" }}>
                       <input type="hidden" name="assignmentId" value={String(task.assignmentId)} />
                       <input type="hidden" name="taskId" value={String(task.id)} />
-                      <input type="hidden" name="studentId" value={String(b.userId)} />
+                      <input type="hidden" name="studentId" value={String(b.id)} />
                       <button className="btn btn-sm" style={{ minHeight: 22, padding: "1px 8px" }} title="Tandai sudah mengerjakan (kerja buku)">✔</button>
                     </form>
                   </span>
@@ -150,7 +153,7 @@ export default async function TugasPage({
         ? await teacherAssignments(user.id, semesterId)
         : await prisma.assignment.findMany({
             where: { ...(semesterId ? { semesterId } : {}) },
-            include: { subject: true, class: true, teacher: { include: { user: { select: { nama: true } } } } },
+            include: { subject: true, class: true, teacher: { select: { nama: true } } },
             orderBy: [{ class: { name: "asc" } }, { subject: { name: "asc" } }],
           });
     if (!a) {
@@ -306,9 +309,9 @@ export default async function TugasPage({
   /* ════ SISWA / ORTU (ortu: baca saja utk anak pertama) ════ */
   let siswaUserId = user.id;
   if (user.role === "ORTU") {
-    const anak = await prisma.linkParentStudent.findFirst({
+    const anak = await prisma.parentLink.findFirst({
       where: { parentId: user.id },
-      include: { studentRec: { include: { user: { select: { id: true } } } } },
+      select: { childId: true },
     });
     if (!anak) {
       return (
@@ -317,7 +320,7 @@ export default async function TugasPage({
         </AppShell>
       );
     }
-    siswaUserId = anak.studentRec.user.id;
+    siswaUserId = anak.childId;
   }
   const clsId = await studentClassId(siswaUserId);
   const assigns = clsId ? await classAssignments([clsId], semesterId) : [];
@@ -329,7 +332,7 @@ export default async function TugasPage({
         assignment: { include: { subject: true, class: true } },
         tp: true,
         files: true,
-        submissions: { where: { studentId: siswaUserId }, include: { files: true, grade: true } },
+        submissions: { where: { studentId: siswaUserId }, include: { files: true, grades: true } },
       },
     });
     if (!task || task.status !== "TERBIT") notFound();
@@ -394,11 +397,11 @@ export default async function TugasPage({
               {sub?.files.map((f) => (
                 <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=s`}>📎 {f.nama}</a>
               ))}
-              {sub?.grade ? (
+              {sub?.grades && sub.grades.length > 0 ? (
                 <div className="list-row warn" style={{ marginTop: 10 }}>
                   <div>
-                    <b>Nilai: {Number(sub.grade.score)}</b> / 100
-                    {sub.grade.feedback && <div className="meta">💬 {sub.grade.feedback}</div>}
+                    <b>Nilai: {Number(sub.grades[0].score)}</b> / 100
+                    {sub.grades[0].feedback && <div className="meta">💬 {sub.grades[0].feedback}</div>}
                   </div>
                 </div>
               ) : (
@@ -421,7 +424,7 @@ export default async function TugasPage({
     include: {
       assignment: { include: { subject: true, class: true } },
       tp: true,
-      submissions: { where: { studentId: siswaUserId }, include: { grade: true } },
+      submissions: { where: { studentId: siswaUserId }, include: { grades: true } },
     },
     orderBy: { dueAt: "desc" },
   });
@@ -430,12 +433,13 @@ export default async function TugasPage({
     <AppShell user={user} active="/tugas">
       <div className="page-head">
         <h1>Tugas 📝</h1>
-        <p>{user.role === "SISWA" ? "Tugasmu semester ini." : `Tugas ${tasks.some((x) => x.submissions[0]) ? "anak" : "anak"} semester ini (baca saja).`}</p>
+        <p>{user.role === "SISWA" ? "Tugasmu semester ini." : `Tugas anak semester ini (baca saja).`}</p>
       </div>
       {tasks.length === 0 && <div className="empty">Belum ada tugas.</div>}
       {tasks.map((tk) => {
         const sub = tk.submissions[0];
-        const nilai = sub?.grade ? Number(sub.grade.score) : null;
+        const g = sub?.grades[0];
+        const nilai = g ? Number(g.score) : null;
         return (
           <a className="card" key={String(tk.id)} href={user.role === "SISWA" ? `/tugas?t=${tk.id}` : "#"} style={user.role !== "SISWA" ? { pointerEvents: "none" } : undefined}>
             <div className="card-body">

@@ -23,12 +23,12 @@ export default async function NilaiPage({
   if (user.role === "SISWA" || user.role === "ORTU") {
     let siswaUserId = user.id;
     if (user.role === "ORTU") {
-      const anak = await prisma.linkParentStudent.findFirst({
+      const anak = await prisma.parentLink.findFirst({
         where: { parentId: user.id },
-        include: { studentRec: { include: { user: { select: { id: true } } } } },
+        select: { childId: true },
       });
       if (!anak) return <AppShell user={user} active="/nilai"><div className="empty">Belum ada anak terhubung.</div></AppShell>;
-      siswaUserId = anak.studentRec.user.id;
+      siswaUserId = anak.childId;
     }
     const clsId = await studentClassId(siswaUserId);
     const assigns = clsId ? await classAssignments([clsId], semesterId) : [];
@@ -82,7 +82,7 @@ export default async function NilaiPage({
       ? await teacherAssignments(user.id, semesterId)
       : await prisma.assignment.findMany({
           where: { ...(semesterId ? { semesterId } : {}) },
-          include: { subject: true, class: true, teacher: { include: { user: { select: { nama: true } } } } },
+          include: { subject: true, class: true, teacher: { select: { nama: true } } },
           orderBy: [{ class: { name: "asc" } }, { subject: { name: "asc" } }],
         });
   if (!a) {
@@ -122,10 +122,10 @@ export default async function NilaiPage({
   if (!asg) notFound();
 
   const [students, tpScores, reportScores, flags] = await Promise.all([
-    prisma.student.findMany({
-      where: { classId: asg.classId, user: { isActive: true, deletedAt: null } },
-      include: { user: { select: { id: true, nama: true, nisn: true } } },
-      orderBy: { user: { nama: "asc" } }, // SELARAS template kementerian: alfabetis
+    prisma.user.findMany({
+      where: { classId: asg.classId, role: "SISWA", isActive: true, deletedAt: null },
+      select: { id: true, nama: true, nisn: true },
+      orderBy: { nama: "asc" },
     }),
     prisma.tpScore.findMany({ where: { tp: { assignmentId } } }),
     prisma.reportScore.findMany({ where: { assignmentId } }),
@@ -190,20 +190,20 @@ export default async function NilaiPage({
             </thead>
             <tbody>
               {students.map((st) => {
-                const r = rapor.get(String(st.userId));
+                const r = rapor.get(String(st.id));
                 const rv = r ? Number(r.score) : null;
-                const kurangValid = rv !== null && rv < 100 && (countFlags(st.userId, "PERLU_PENINGKATAN") < 1 || countFlags(st.userId, "SANGAT_TERCAPAI") < 1);
+                const kurangValid = rv !== null && rv < 100 && (countFlags(st.id, "PERLU_PENINGKATAN") < 1 || countFlags(st.id, "SANGAT_TERCAPAI") < 1);
                 return (
                   <tr key={String(st.id)}>
                     <td>
-                      <b>{st.user.nama}</b>
-                      <div className="muted" style={{ fontSize: 11 }}>{st.user.nisn ?? st.user.id}</div>
+                      <b>{st.nama}</b>
+                      <div className="muted" style={{ fontSize: 11 }}>{st.nisn ?? st.id}</div>
                       {kurangValid && <span className="badge badge-yellow" title="rapor <100 → wajib ≥1 TP ✋ & ≥1 TP ⭐ (aturan kementerian)">⚠ TR/OP</span>}
                     </td>
                     {asg.learningTargets.map((tp) => {
-                      const s = skor.get(`${tp.id}|${st.userId}`);
-                      const isTr = flagSet.has(`${tp.id}|${st.userId}|PERLU_PENINGKATAN`);
-                      const isOp = flagSet.has(`${tp.id}|${st.userId}|SANGAT_TERCAPAI`);
+                      const s = skor.get(`${tp.id}|${st.id}`);
+                      const isTr = flagSet.has(`${tp.id}|${st.id}|PERLU_PENINGKATAN`);
+                      const isOp = flagSet.has(`${tp.id}|${st.id}|SANGAT_TERCAPAI`);
                       return (
                         <td key={String(tp.id)}>
                           {canEdit ? (
@@ -211,7 +211,7 @@ export default async function NilaiPage({
                               <form action={setTpScore} className="cellform">
                                 <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                                 <input type="hidden" name="tpId" value={String(tp.id)} />
-                                <input type="hidden" name="studentId" value={String(st.userId)} />
+                                <input type="hidden" name="studentId" value={String(st.id)} />
                                 <input className="input" style={{ width: 62, minWidth: 62 }} type="number" min={0} max={100} name="score"
                                   defaultValue={s ? Number(s.score).toString() : ""} placeholder="—" />
                                 {s?.source === "MANUAL" && <span title="koreksi manual — timpa dgn 'Paksa'" style={{ fontSize: 10 }}>✎</span>}
@@ -220,14 +220,14 @@ export default async function NilaiPage({
                                 <form action={toggleFlag} className="mini">
                                   <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                                   <input type="hidden" name="tpId" value={String(tp.id)} />
-                                  <input type="hidden" name="studentId" value={String(st.userId)} />
+                                  <input type="hidden" name="studentId" value={String(st.id)} />
                                   <input type="hidden" name="type" value="PERLU_PENINGKATAN" />
                                   <button className={`btn btn-sm ${isTr ? "btn-danger" : ""}`} style={{ padding: "1px 6px", minHeight: 22 }} title="perlu peningkatan">✋</button>
                                 </form>
                                 <form action={toggleFlag} className="mini">
                                   <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                                   <input type="hidden" name="tpId" value={String(tp.id)} />
-                                  <input type="hidden" name="studentId" value={String(st.userId)} />
+                                  <input type="hidden" name="studentId" value={String(st.id)} />
                                   <input type="hidden" name="type" value="SANGAT_TERCAPAI" />
                                   <button className={`btn btn-sm ${isOp ? "btn-primary" : ""}`} style={{ padding: "1px 6px", minHeight: 22 }} title="sangat tercapai">⭐</button>
                                 </form>
@@ -240,14 +240,14 @@ export default async function NilaiPage({
                       );
                     })}
                     {asg.manualAssessments.map((ma) => {
-                      const g = asgGrade.get(`${ma.id}|${st.userId}`);
+                      const g = asgGrade.get(`${ma.id}|${st.id}`);
                       return (
                         <td key={String(ma.id)}>
                           {canEdit ? (
                             <form action={setAssessmentScore} className="cellform">
                               <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                               <input type="hidden" name="assessmentId" value={String(ma.id)} />
-                              <input type="hidden" name="studentId" value={String(st.userId)} />
+                              <input type="hidden" name="studentId" value={String(st.id)} />
                               <input className="input" style={{ width: 62, minWidth: 62 }} type="number" min={0} max={100} name="score"
                                 defaultValue={g !== undefined ? String(g) : ""} placeholder="—" />
                             </form>
@@ -260,7 +260,7 @@ export default async function NilaiPage({
                       {canEdit && (
                         <form action={setReportScore} className="cellform">
                           <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-                          <input type="hidden" name="studentId" value={String(st.userId)} />
+                          <input type="hidden" name="studentId" value={String(st.id)} />
                           <input className="input" style={{ width: 62, minWidth: 62 }} type="number" min={0} max={100} name="score"
                             defaultValue={rv !== null ? String(rv) : ""} placeholder="koreksi" />
                         </form>

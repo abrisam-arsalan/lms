@@ -14,10 +14,10 @@ async function loadSchedules(assignmentWhere: Prisma.AssignmentWhereInput) {
     where: { assignment: assignmentWhere },
     include: {
       assignment: {
-        include: { subject: true, class: true, teacher: { include: { user: { select: { nama: true } } } } },
+        include: { subject: true, class: true, teacher: { select: { nama: true } } },
       },
     },
-    orderBy: [{ day: "asc" }, { start: "asc" }],
+    orderBy: [{ day: "asc" }, { startTime: "asc" }],
   });
 }
 
@@ -28,7 +28,7 @@ function WeekView({ rows, today }: { rows: Awaited<ReturnType<typeof loadSchedul
     arr.push(r);
     byDay.set(r.day, arr);
   }
-  const days = [...byDay.keys()].sort((a, b) => a - b).filter((d) => d >= 1); // skip Minggu kosong
+  const days = [...byDay.keys()].sort((a, b) => a - b).filter((d) => d >= 1);
   return (
     <>
       {days.map((d) => (
@@ -42,11 +42,11 @@ function WeekView({ rows, today }: { rows: Awaited<ReturnType<typeof loadSchedul
               <div className="list-row" key={String(s.id)} style={{ marginBottom: 8 }}>
                 <div style={{ flex: 1 }}>
                   <b>{s.assignment.subject.name}</b>{" "}
-                  <span className="muted">{s.start}–{s.end}{s.room ? ` · ${s.room}` : ""}</span>
+                  <span className="muted">{s.startTime}–{s.endTime}{s.room ? ` · ${s.room}` : ""}</span>
                   <div className="meta">{s.assignment.class.name} · {s.assignment.teacher?.nama ?? "—"}</div>
                 </div>
                 {s.day === today && (
-                  <span className="badge badge-yellow">{new Date().toTimeString().slice(0, 5) >= s.start ? "berlangsung/selesai" : "akan datang"}</span>
+                  <span className="badge badge-yellow">{new Date().toTimeString().slice(0, 5) >= s.startTime ? "berlangsung/selesai" : "akan datang"}</span>
                 )}
               </div>
             ))}
@@ -69,17 +69,14 @@ export default async function JadwalPage({
   const semesterId = ctx?.semester.id;
   const today = new Date().getDay();
 
-  /* ── admin/kepsek/guru: mode kelola per assignment (admin = CRUD) ── */
   if (a) {
     const assignmentId = BigInt(a);
-    const canEdit = await canManageAssignment(user, assignmentId) && user.role === "ADMIN";
     if (user.role === "GURU") {
-      // guru boleh buka miliknya sendiri (lihat)
-      const own = await prisma.assignment.findFirst({ where: { id: assignmentId, teacher: { userId: user.id } }, select: { id: true } });
+      const own = await prisma.assignment.findFirst({ where: { id: assignmentId, teacherId: user.id }, select: { id: true } });
       if (!own) redirect("/jadwal");
-    } else if (user.role === "ADMIN" || user.role === "KEPSEK") {
-      /* boleh */
-    } else redirect("/jadwal");
+    } else if (user.role !== "ADMIN" && user.role !== "KEPSEK") {
+      redirect("/jadwal");
+    }
 
     const rows = await loadSchedules({ id: assignmentId });
     const asg = rows[0]?.assignment;
@@ -127,7 +124,7 @@ export default async function JadwalPage({
             <div className="card-body">
               {rows.map((s) => (
                 <div key={String(s.id)} className="row-actions" style={{ marginBottom: 6 }}>
-                  <span className="pill">{DAYS[s.day]} {s.start}–{s.end}</span>
+                  <span className="pill">{DAYS[s.day]} {s.startTime}–{s.endTime}</span>
                   <DangerSubmit action={deleteSchedule} hidden={{ id: String(s.id), assignmentId: a }} confirmText="Hapus baris jadwal ini?">✕ hapus</DangerSubmit>
                 </div>
               ))}
@@ -138,16 +135,15 @@ export default async function JadwalPage({
     );
   }
 
-  /* ── siswa / ortu: jadwal kelasnya ── */
   if (user.role === "SISWA" || user.role === "ORTU") {
     let siswaUserId = user.id;
     if (user.role === "ORTU") {
-      const anak = await prisma.linkParentStudent.findFirst({
+      const anak = await prisma.parentLink.findFirst({
         where: { parentId: user.id },
-        include: { studentRec: { include: { user: { select: { id: true } } } } },
+        select: { childId: true },
       });
       if (!anak) return <AppShell user={user} active="/jadwal"><div className="empty">Belum ada anak terhubung.</div></AppShell>;
-      siswaUserId = anak.studentRec.user.id;
+      siswaUserId = anak.childId;
     }
     const clsId = await studentClassId(siswaUserId);
     const assigns = clsId ? await classAssignments([clsId], semesterId) : [];
@@ -160,7 +156,6 @@ export default async function JadwalPage({
     );
   }
 
-  /* ── guru: jadwal mengajarnya ── */
   if (user.role === "GURU") {
     const my = await teacherAssignments(user.id, semesterId);
     const rows = await loadSchedules({ id: { in: my.map((x) => x.id) } });
@@ -172,11 +167,10 @@ export default async function JadwalPage({
     );
   }
 
-  /* ── admin / kepsek: pilih rombel ── */
   const classes = await prisma.class.findMany({
-    where: { ...(semesterId ? { academicYearId: (await currentSemester())!.year.id } : {}) },
+    where: { ...(semesterId && ctx ? { academicYearId: ctx.year.id } : {}) },
     orderBy: { name: "asc" },
-    include: { assignments: { include: { subject: true, teacher: { include: { user: { select: { nama: true } } } } } } },
+    include: { assignments: { include: { subject: true, teacher: { select: { nama: true } } } } },
   });
   return (
     <AppShell user={user} active="/jadwal">

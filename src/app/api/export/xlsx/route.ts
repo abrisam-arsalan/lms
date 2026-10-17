@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
 
   const ctx = await currentSemester();
   const semesterId = ctx?.semester.id;
-  const roleFilter = user.role === "GURU" ? { teacher: { userId: user.id } } : {};
+  const roleFilter = user.role === "GURU" ? { teacherId: user.id } : {};
   const assignments = await prisma.assignment.findMany({
     where: {
       subjectId,
@@ -70,24 +70,24 @@ export async function GET(req: NextRequest) {
 
   // siswa tiap rombel, urut alfabetis mengikuti template kementerian
   const classIds = assignments.map((a) => a.classId);
-  const students = await prisma.student.findMany({
-    where: { classId: { in: classIds }, user: { isActive: true, deletedAt: null } },
-    include: { user: { select: { nama: true, nisn: true } } },
-    orderBy: { user: { nama: "asc" } },
+  const students = await prisma.user.findMany({
+    where: { classId: { in: classIds }, role: "SISWA", isActive: true, deletedAt: null },
+    select: { id: true, classId: true, nama: true, nisn: true },
+    orderBy: { nama: "asc" },
   });
 
   const rowsFor = (a: (typeof assignments)[number]) => {
     const rapor = new Map(a.reportScores.map((r) => [String(r.studentId), Number(r.score)]));
     const list = students.filter((s) => s.classId === a.classId);
     return list.map((s, i) => {
-      const fl = flagsBy.get(`${a.id}|${s.userId}`);
+      const fl = flagsBy.get(`${a.id}|${s.id}`);
       return [
         String(i + 1),
-        s.user.nisn ?? "",
-        s.user.nama,
-        rapor.has(String(s.userId)) ? String(rapor.get(String(s.userId))) : "",
+        s.nisn ?? "",
+        s.nama,
+        rapor.has(String(s.id)) ? String(rapor.get(String(s.id))) : "",
         ...a.learningTargets.map((tp) => {
-          const v = skorBy.get(`${a.id}|${tp.id}|${s.userId}`);
+          const v = skorBy.get(`${a.id}|${tp.id}|${s.id}`);
           return v === undefined ? "" : String(Math.round(v));
         }),
         String(fl?.tr ?? 0),
@@ -124,7 +124,7 @@ export async function GET(req: NextRequest) {
     ws.addRow([`FORMAT NILAI ${a.subject.name.toUpperCase()} — KELAS ${a.class.name} — ${semesterLabel}`]);
     ws.addRow(head1);
     ws.addRow(head2);
-    for (const r of rowsFor(a)) ws.addRow(r.map((c) => (c === "" ? null : Number(c) || c)));
+    for (const r of rowsFor(a)) ws.addRow(r.map((c: string) => (c === "" ? null : Number(c) || c)));
     ws.getRow(1).font = { bold: true };
     ws.getRow(2).font = { bold: true };
     ws.getRow(3).font = { bold: true, color: { argb: "FF2B47E0" } };

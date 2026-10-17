@@ -1,0 +1,301 @@
+import { notFound, redirect } from "next/navigation";
+import { requireRole } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import AppShell from "@/components/app-shell";
+import { DAYS } from "@/lib/notify";
+import { openSession, saveAttendance } from "./actions";
+import { AttendanceStatus } from "@prisma/client";
+
+export default async function PresensiPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session?: string; ok?: string }>;
+}) {
+  const user = await requireRole(["GURU", "ADMIN"]);
+  const { session: sessionIdStr, ok } = await searchParams;
+
+  const today = new Date();
+  const todayDay = today.getDay(); // 0=Minggu, 1=Senin..
+  const todayStr = today.toISOString().slice(0, 10);
+
+  // Jika sedang membuka sesi spesifik
+  if (sessionIdStr) {
+    const sessionId = BigInt(sessionIdStr);
+    const session = await prisma.classSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        schedule: {
+          include: {
+            assignment: {
+              include: { class: true, subject: true, teacher: true },
+            },
+          },
+        },
+        records: {
+          include: { student: true },
+          orderBy: { student: { nama: "asc" } },
+        },
+      },
+    });
+
+    if (!session) notFound();
+    if (user.role === "GURU" && session.schedule.assignment.teacherId !== user.id) {
+      redirect("/presensi");
+    }
+
+    const dateFormatted = new Date(session.date).toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
+    return (
+      <AppShell user={user} active="/presensi">
+        <div className="page-head">
+          <h1>Presensi Kelas: {session.schedule.assignment.class.name}</h1>
+          <p>
+            {session.schedule.assignment.subject.name} · {dateFormatted} · Jam {session.schedule.startTime}–{session.schedule.endTime} ·{" "}
+            <span className={`badge ${session.status === "SELESAI" ? "badge-green" : "badge-yellow"}`}>
+              {session.status}
+            </span>
+          </p>
+          {ok && <p className="badge badge-green" style={{ marginTop: 8 }}>✅ Presensi berhasil disimpan!</p>}
+        </div>
+
+        <form action={saveAttendance}>
+          <input type="hidden" name="sessionId" value={String(session.id)} />
+
+          <div className="card">
+            <div className="card-head">
+              <h2>Daftar Siswa ({session.records.length})</h2>
+              <span className="muted">Default: HADIR. Klik opsi untuk siswa yang berhalangan.</span>
+            </div>
+            <div className="card-body">
+              {session.records.length === 0 && (
+                <div className="empty">Belum ada siswa terdaftar di rombel ini.</div>
+              )}
+              {session.records.map((r, i) => (
+                <div
+                  className="list-row"
+                  key={String(r.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: 12,
+                    padding: "8px 0",
+                    borderBottom: "1px dashed var(--border)",
+                  }}
+                >
+                  <div style={{ minWidth: 200, flex: 1 }}>
+                    <span style={{ fontWeight: 800, marginRight: 8 }}>{i + 1}.</span>
+                    <b>{r.student.nama}</b>
+                    <div className="meta">NISN: {r.student.nisn ?? "—"} · NIS: {r.student.nis ?? "—"}</div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {(["HADIR", "SAKIT", "IZIN", "ALPHA"] as AttendanceStatus[]).map((st) => (
+                        <label
+                          key={st}
+                          className="pill"
+                          style={{
+                            cursor: "pointer",
+                            fontSize: 12,
+                            padding: "4px 8px",
+                            background: r.status === st ? "var(--accent)" : "transparent",
+                            fontWeight: r.status === st ? "bold" : "normal",
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name={`status_${r.studentId}`}
+                            value={st}
+                            defaultChecked={r.status === st}
+                            style={{ display: "none" }}
+                          />
+                          {st === "HADIR" && "✅ Hadir"}
+                          {st === "SAKIT" && "🤒 Sakit"}
+                          {st === "IZIN" && "📄 Izin"}
+                          {st === "ALPHA" && "❌ Alpa"}
+                        </label>
+                      ))}
+                    </div>
+
+                    <input
+                      className="input"
+                      style={{ width: 180, fontSize: 13 }}
+                      type="text"
+                      name={`ket_${r.studentId}`}
+                      defaultValue={r.keterangan}
+                      placeholder="Ket / alasan..."
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="form-grid two" style={{ marginTop: 16 }}>
+            <div className="card">
+              <div className="card-head">
+                <h2>Materi Hari Ini</h2>
+              </div>
+              <div className="card-body">
+                <textarea
+                  className="input"
+                  name="materi"
+                  rows={4}
+                  defaultValue={session.materi}
+                  placeholder="Ringkasan materi atau bab yang diajarkan pada pertemuan ini..."
+                />
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="card-head">
+                <h2>Catatan Kelas</h2>
+              </div>
+              <div className="card-body">
+                <textarea
+                  className="input"
+                  name="catatanKelas"
+                  rows={4}
+                  defaultValue={session.catatanKelas}
+                  placeholder="Catatan perilaku, PR, atau hal khusus dalam kelas..."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 12, marginTop: 16, alignItems: "center" }}>
+            <button className="btn btn-primary" type="submit" name="finish" value="0">
+              💾 Simpan Draf
+            </button>
+            <button className="btn btn-green" type="submit" name="finish" value="1">
+              ✅ Simpan & Tandai Selesai
+            </button>
+            <a className="btn btn-ghost" href="/presensi">
+              ← Kembali ke Daftar
+            </a>
+          </div>
+        </form>
+      </AppShell>
+    );
+  }
+
+  // Tampilan Beranda Presensi: Jadwal Hari Ini & Jadwal Mengajar
+  const teacherWhere = user.role === "GURU" ? { teacherId: user.id } : {};
+  const schedules = await prisma.schedule.findMany({
+    where: { assignment: teacherWhere },
+    include: {
+      assignment: {
+        include: { class: true, subject: true, teacher: true },
+      },
+      classSessions: {
+        where: { date: new Date(`${todayStr}T00:00:00.000Z`) },
+      },
+    },
+    orderBy: [{ day: "asc" }, { startTime: "asc" }],
+  });
+
+  const todaySchedules = schedules.filter((s) => s.day === todayDay);
+
+  return (
+    <AppShell user={user} active="/presensi">
+      <div className="page-head">
+        <h1>Presensi & Jurnal Mengajar ✅</h1>
+        <p>Buka absensi harian dan catat jurnal materi kelas sesuai jadwal mengajar Anda.</p>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <h2>Jadwal Hari Ini ({DAYS[todayDay]})</h2>
+          <span className="pill">{todayStr}</span>
+        </div>
+        <div className="card-body">
+          {todaySchedules.length === 0 && (
+            <div className="empty">Tidak ada jadwal mengajar pada hari ini ({DAYS[todayDay]}).</div>
+          )}
+          {todaySchedules.map((s) => {
+            const activeSession = s.classSessions[0];
+            return (
+              <div
+                className="list-row"
+                key={String(s.id)}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 12,
+                  marginBottom: 10,
+                }}
+              >
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16 }}>
+                    {s.assignment.class.name} · {s.assignment.subject.name}
+                  </h3>
+                  <div className="meta">
+                    ⏰ {s.startTime} – {s.endTime} {s.room ? `· Ruang: ${s.room}` : ""} · Guru: {s.assignment.teacher?.nama}
+                  </div>
+                </div>
+
+                <div>
+                  {activeSession ? (
+                    <a className="btn btn-primary btn-sm" href={`/presensi?session=${activeSession.id}`}>
+                      📝 Lanjut Presensi ({activeSession.status})
+                    </a>
+                  ) : (
+                    <form action={openSession} style={{ display: "inline" }}>
+                      <input type="hidden" name="scheduleId" value={String(s.id)} />
+                      <input type="hidden" name="date" value={todayStr} />
+                      <button className="btn btn-green btn-sm" type="submit">
+                        ▶️ Buka Presensi
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 20 }}>
+        <div className="card-head">
+          <h2>Semua Jadwal Mengajar Mingguan</h2>
+        </div>
+        <div className="card-body">
+          {schedules.length === 0 && <div className="empty">Belum ada jadwal mengajar yang diatur.</div>}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+            {schedules.map((s) => (
+              <div
+                key={String(s.id)}
+                className="card"
+                style={{ margin: 0, padding: 12, background: s.day === todayDay ? "var(--bg-accent, #FFF9DB)" : undefined }}
+              >
+                <b>{DAYS[s.day]}</b> · <span className="muted">{s.startTime}–{s.endTime}</span>
+                <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>
+                  {s.assignment.class.name} — {s.assignment.subject.name}
+                </div>
+                <div className="meta" style={{ marginTop: 4 }}>
+                  {s.room ? `Ruang ${s.room}` : "Kelas reguler"}
+                </div>
+                <form action={openSession} style={{ marginTop: 10 }}>
+                  <input type="hidden" name="scheduleId" value={String(s.id)} />
+                  <input type="date" name="date" defaultValue={todayStr} className="input" style={{ width: "100%", marginBottom: 6, fontSize: 13 }} required />
+                  <button className="btn btn-sm btn-ghost" type="submit" style={{ width: "100%" }}>
+                    Buka Tanggal Ini →
+                  </button>
+                </form>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}

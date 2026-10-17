@@ -1,7 +1,5 @@
 import type { Role } from "@prisma/client";
 
-// Navigasi bawah mobile per peran — pola & ikon mengikuti ui.ts Presensi
-// (🏠 beranda, 📖 materi, dst.) agar siswa/guru merasa satu aplikasi.
 export interface NavItem {
   href: string;
   icon: string;
@@ -16,19 +14,25 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/admin/import", icon: "📥", label: "Import" },
     { href: "/jadwal", icon: "🗓️", label: "Jadwal" },
     { href: "/pengumuman", icon: "📢", label: "Pengumuman" },
+    { href: "/admin/ujian", icon: "📋", label: "Ujian" },
   ],
   KEPSEK: [
     { href: "/dashboard", icon: "🏠", label: "Beranda" },
+    { href: "/rekap-presensi", icon: "📅", label: "Presensi" },
     { href: "/nilai", icon: "📊", label: "Rekap Nilai" },
     { href: "/jadwal", icon: "🗓️", label: "Jadwal" },
+    { href: "/mpi", icon: "🎮", label: "MPI" },
   ],
   GURU: [
     { href: "/dashboard", icon: "🏠", label: "Beranda" },
+    { href: "/presensi", icon: "✅", label: "Presensi" },
     { href: "/tp", icon: "🎯", label: "TP" },
     { href: "/materi", icon: "📖", label: "Materi" },
     { href: "/tugas", icon: "📝", label: "Tugas" },
     { href: "/nilai", icon: "📊", label: "Nilai" },
     { href: "/jadwal", icon: "🗓️", label: "Jadwal" },
+    { href: "/mpi", icon: "🎮", label: "MPI" },
+    { href: "/ujian", icon: "📋", label: "Ujian" },
   ],
   SISWA: [
     { href: "/dashboard", icon: "🏠", label: "Beranda" },
@@ -36,11 +40,14 @@ export const NAV: Record<Role, NavItem[]> = {
     { href: "/tugas", icon: "📝", label: "Tugas" },
     { href: "/nilai", icon: "📊", label: "Nilai" },
     { href: "/jadwal", icon: "🗓️", label: "Jadwal" },
+    { href: "/ujian", icon: "📋", label: "Ujian" },
   ],
   ORTU: [
     { href: "/dashboard", icon: "🏠", label: "Beranda" },
+    { href: "/rekap-presensi", icon: "📅", label: "Kehadiran" },
     { href: "/materi", icon: "📖", label: "Materi" },
     { href: "/nilai", icon: "📊", label: "Nilai" },
+    { href: "/ujian", icon: "📋", label: "Ujian" },
   ],
 };
 

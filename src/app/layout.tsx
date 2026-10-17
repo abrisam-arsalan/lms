@@ -2,16 +2,16 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LMS SMPN 5 Tegal",
-  description: "Belajar-mengajar: materi, tugas, nilai, jadwal",
+  title: "Portal Panglima — SMPN 5 Tegal",
+  description: "LMS, Presensi, dan MPI dalam satu portal",
   icons: { icon: "/assets/logo.png" },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  viewportFit: "cover", // utk env(safe-area-inset-bottom) di bottom-nav (iPhone X+)
-  themeColor: "#3858F8", // selaras presensi
+  viewportFit: "cover",
+  themeColor: "#FFD43B",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

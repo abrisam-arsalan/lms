@@ -12,8 +12,8 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /**
- * Kerangka halaman selaras Presensi: topbar (brand + avatar + keluar),
- * konten, dan bottom-nav mobile per peran. `active` = href rute saat ini.
+ * Kerangka halaman portal Panglima: topbar (brand + notif + avatar + keluar),
+ * konten, dan bottom-nav mobile per peran.
  */
 export default async function AppShell({
   user,
@@ -26,8 +26,8 @@ export default async function AppShell({
 }) {
   const nav = NAV[user.role] ?? [];
   const isAdmin = user.role === "ADMIN";
-  const isReader = user.role === "SISWA" || user.role === "ORTU";
-  const unread = isReader
+  const showBell = ["SISWA", "ORTU", "GURU"].includes(user.role);
+  const unread = showBell
     ? await prisma.notification.count({ where: { userId: user.id, readAt: null } })
     : 0;
 
@@ -38,11 +38,11 @@ export default async function AppShell({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="brand-logo" src="/assets/logo.png" alt="Logo" />
           <span className="brand-text">
-            LMS<small>SMPN 5 Tegal</small>
+            Panglima<small>SMPN 5 Tegal</small>
           </span>
         </a>
         <div className="topbar-right">
-          {isReader && (
+          {showBell && (
             <a href="/notifikasi" className="bell" aria-label="Notifikasi" style={{ position: "relative" }}>
               🔔{unread > 0 && <span className="bell-dot">{unread > 99 ? "99+" : unread}</span>}
             </a>
@@ -50,7 +50,7 @@ export default async function AppShell({
           <span className="userchip">
             <span className="avatar">{initials(user.nama)}</span>
             <span className="user-meta">
-              <b>{user.nama}</b>
+              <b>{user.nama.split(",")[0]}</b>
               <small>{ROLE_LABEL[user.role] ?? user.role}</small>
             </span>
           </span>

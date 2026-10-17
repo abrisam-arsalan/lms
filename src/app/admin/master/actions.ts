@@ -21,14 +21,14 @@ export async function createAssignment(formData: FormData) {
   if (!ctx) redirect("/admin/master?err=Set+tahun+ajaran+aktif+dulu");
   if (!teacherUserId || !subjectId || !classId) redirect("/admin/master?err=Lengkapi+guru%2C+mapel%2C+rombel");
 
-  const teacher = await prisma.teacher.findUnique({ where: { userId: teacherUserId } });
+  const teacher = await prisma.user.findFirst({ where: { id: teacherUserId, role: "GURU" } });
   if (!teacher) redirect("/admin/master?err=Akun+terpilih+belum+berperan+GURU");
   await prisma.assignment.upsert({
     where: { teacherId_subjectId_classId_semesterId: { teacherId: teacher.id, subjectId, classId, semesterId: ctx.semester.id } },
     create: { teacherId: teacher.id, subjectId, classId, semesterId: ctx.semester.id },
     update: {},
   });
-  await logAudit({ userId: admin.id, action: "ASSIGN_BAU", entity: "assignments", entityId: `${teacherUserId}|${subjectId}|${classId}` });
+  await logAudit({ userId: admin.id, action: "ASSIGN_BARU", entity: "assignments", entityId: `${teacherUserId}|${subjectId}|${classId}` });
   revalidatePath("/admin/master");
 }
 
@@ -62,10 +62,10 @@ export async function setHomeroom(formData: FormData) {
 export async function addSubject(formData: FormData) {
   const admin = await guard();
   const name = String(formData.get("name") ?? "").trim().slice(0, 80);
-  const code = String(formData.get("code") ?? "").trim().slice(0, 16) || null;
+  const code = String(formData.get("code") ?? "").trim().slice(0, 16) || "MAPEL";
   if (!name) redirect("/admin/master?err=Nama+mapel+wajib");
-  await prisma.subject.upsert({ where: { name }, create: { name, code }, update: { code: code ?? undefined } });
-  await logAudit({ userId: admin.id, action: "MAPEL_BAU", entity: "subjects", entityId: name });
+  await prisma.subject.upsert({ where: { name }, create: { name, code }, update: { code } });
+  await logAudit({ userId: admin.id, action: "MAPEL_BARU", entity: "subjects", entityId: name });
   revalidatePath("/admin/master");
 }
 
@@ -81,6 +81,6 @@ export async function addClass(formData: FormData) {
     create: { name, tingkat: Number(m[1]), academicYearId: ctx.year.id },
     update: {},
   });
-  await logAudit({ userId: admin.id, action: "ROMBEL_BAU", entity: "classes", entityId: name });
+  await logAudit({ userId: admin.id, action: "ROMBEL_BARU", entity: "classes", entityId: name });
   revalidatePath("/admin/master");
 }

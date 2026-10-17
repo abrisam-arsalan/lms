@@ -5,31 +5,33 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, logAudit } from "@/lib/auth";
 import { canManageAssignment } from "@/lib/academic";
-import { saveUpload, removeStored } from "@/lib/storage";
+import { removeStored, saveFile } from "@/lib/storage";
 
-async function guard(assignmentIdRaw: string | null) {
+const clean = (v: FormDataEntryValue | null, max = 200) => String(v ?? "").trim().slice(0, max);
+const back = (a: bigint) => redirect(`/materi?a=${a}`);
+
+async function guard(assignmentIdStr: string | null) {
   const user = await getSessionUser();
-  if (!user) redirect("/login");
-  const assignmentId = BigInt(assignmentIdRaw ?? "0");
-  if (!assignmentId || !(await canManageAssignment(user, assignmentId))) {
-    throw new Error("Aksi ditolak: bukan rombel/mapel-mu");
-  }
+  if (!user) throw new Error("Wajib login");
+  const assignmentId = BigInt(assignmentIdStr ?? "0");
+  if (!assignmentId) throw new Error("Assignment tidak valid");
+  const allowed = await canManageAssignment(user, assignmentId);
+  if (!allowed) throw new Error("Akses ditolak");
   return { user, assignmentId };
-}
-
-function back(id: bigint): never {
-  redirect(`/materi?a=${id}`);
 }
 
 export async function createMateri(formData: FormData) {
   const { user, assignmentId } = await guard(formData.get("assignmentId")?.toString() ?? null);
-  const judul = String(formData.get("judul") ?? "").trim();
+  const judul = clean(formData.get("judul"), 200);
   const body = String(formData.get("body") ?? "").trim();
-  const tpId = String(formData.get("tpId") ?? "");
   const status = formData.get("status") === "TERBIT" ? "TERBIT" : "DRAF";
-  if (!judul) back(assignmentId);
+  const tpId = clean(formData.get("tpId"), 20);
+  if (!judul || !body) back(assignmentId);
 
-  const max = await prisma.material.aggregate({ where: { assignmentId }, _max: { urutan: true } });
+  const max = await prisma.material.aggregate({
+    where: { assignmentId },
+    _max: { urutan: true },
+  });
   const m = await prisma.material.create({
     data: {
       assignmentId,
@@ -42,31 +44,32 @@ export async function createMateri(formData: FormData) {
       ...(tpId ? { tpId: BigInt(tpId) } : {}),
     },
   });
-  await logAudit({ userId: user.id, action: "MATERI_BAU", entity: "materials", entityId: String(m.id) });
+  await logAudit({ userId: user.id, action: "MATERI_BARU", entity: "materials", entityId: String(m.id) });
   if (status === "TERBIT") await notifyMateri(assignmentId, judul);
   revalidatePath(`/materi`);
   back(assignmentId);
 }
 
 async function notifyMateri(assignmentId: bigint, judul: string) {
-  const { notifyStudentsOfClass } = await import("@/lib/notify");
+  const { notifyClass } = await import("@/lib/notify");
   const a = await prisma.assignment.findUnique({
     where: { id: assignmentId },
     include: { subject: true, class: true },
   });
-  if (a) await notifyStudentsOfClass(a.classId, "materi_baru", `📖 Materi baru: ${judul} (${a.class.name} · ${a.subject.name})`, "/materi");
+  if (a) await notifyClass(a.classId, "materi_baru", `📖 Materi baru: ${judul} (${a.class.name} · ${a.subject.name})`, "/materi");
 }
 
 export async function updateMateri(formData: FormData) {
-  const { assignmentId } = await guard(formData.get("assignmentId")?.toString() ?? null);
+  const { user, assignmentId } = await guard(formData.get("assignmentId")?.toString() ?? null);
   const id = BigInt(String(formData.get("id") ?? "0"));
-  const judul = String(formData.get("judul") ?? "").trim();
-  const body = String(formData.get("body") ?? "");
-  const tpId = String(formData.get("tpId") ?? "");
+  const judul = clean(formData.get("judul"), 200);
+  const body = String(formData.get("body") ?? "").trim();
   const status = formData.get("status") === "TERBIT" ? "TERBIT" : "DRAF";
-  const m = await prisma.material.findFirst({ where: { id, assignmentId, deletedAt: null } });
-  if (!m || !judul) back(assignmentId);
-  const jadiTerbit = status === "TERBIT" && m.status === "DRAF";
+  const tpId = clean(formData.get("tpId"), 20);
+  if (!id || !judul || !body) back(assignmentId);
+
+  const prev = await prisma.material.findFirst({ where: { id, assignmentId } });
+  if (!prev) throw new Error("Materi tidak ditemukan");
 
   await prisma.material.update({
     where: { id },
@@ -74,12 +77,12 @@ export async function updateMateri(formData: FormData) {
       judul,
       body,
       status,
-      publishAt: status === "TERBIT" ? m.publishAt ?? new Date() : null,
+      publishAt: status === "TERBIT" && !prev.publishAt ? new Date() : prev.publishAt,
       tpId: tpId ? BigInt(tpId) : null,
     },
   });
-  await logAudit({ action: "MATERI_UBAH", entity: "materials", entityId: String(id) });
-  if (jadiTerbit) await notifyMateri(assignmentId, judul);
+  await logAudit({ userId: user.id, action: "MATERI_UBAH", entity: "materials", entityId: String(id) });
+  if (prev.status === "DRAF" && status === "TERBIT") await notifyMateri(assignmentId, judul);
   revalidatePath(`/materi`);
   back(assignmentId);
 }
@@ -87,34 +90,41 @@ export async function updateMateri(formData: FormData) {
 export async function deleteMateri(formData: FormData) {
   const { user, assignmentId } = await guard(formData.get("assignmentId")?.toString() ?? null);
   const id = BigInt(String(formData.get("id") ?? "0"));
-  await prisma.material.updateMany({ where: { id, assignmentId }, data: { deletedAt: new Date() } });
+  await prisma.material.updateMany({
+    where: { id, assignmentId },
+    data: { deletedAt: new Date() },
+  });
   await logAudit({ userId: user.id, action: "MATERI_HAPUS", entity: "materials", entityId: String(id) });
   revalidatePath(`/materi`);
+  back(assignmentId);
 }
 
-export async function addMateriFile(formData: FormData) {
+export async function uploadMateriFile(formData: FormData) {
   const { assignmentId } = await guard(formData.get("assignmentId")?.toString() ?? null);
   const materialId = BigInt(String(formData.get("materialId") ?? "0"));
   const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) back(assignmentId);
-  const m = await prisma.material.findFirst({ where: { id: materialId, assignmentId, deletedAt: null } });
-  if (!m) throw new Error("Materi tidak ditemukan");
+  if (!file || typeof file === "string" || !(file instanceof Blob) || file.size === 0) {
+    back(assignmentId);
+    return;
+  }
+  const f = file as File;
+  if (f.size > 20 * 1024 * 1024) redirect(`/materi?a=${assignmentId}&err=Ukuran+maks+20MB`);
 
-  const storedName = await saveUpload(file);
+  const bytes = Buffer.from(await f.arrayBuffer());
+  const stored = await saveFile(bytes, f.name || "file");
   await prisma.materialFile.create({
     data: {
       materialId,
-      nama: file.name.slice(0, 250),
-      storedName,
-      mime: file.type || "application/octet-stream",
-      sizeBytes: BigInt(file.size),
+      nama: (f.name || "file").slice(0, 255),
+      storedName: stored.storedName,
+      mime: f.type || "application/octet-stream",
+      sizeBytes: BigInt(f.size),
     },
   });
   revalidatePath(`/materi`);
   back(assignmentId);
 }
 
-/** Siswa menandai materi sudah dibaca (PRD M1: indikator dibaca). */
 export async function markRead(formData: FormData) {
   const user = await getSessionUser();
   if (!user || user.role !== "SISWA") throw new Error("Hanya siswa");
@@ -124,8 +134,7 @@ export async function markRead(formData: FormData) {
     include: { assignment: { select: { classId: true } } },
   });
   if (!m) throw new Error("Materi tidak ada");
-  const stu = await prisma.student.findUnique({ where: { userId: user.id }, select: { classId: true } });
-  if (stu?.classId !== m.assignment.classId) throw new Error("Bukan materi kelasmu");
+  if (user.classId !== m.assignment.classId) throw new Error("Bukan materi kelasmu");
   await prisma.materialRead.upsert({
     where: { materialId_userId: { materialId, userId: user.id } },
     create: { materialId, userId: user.id },

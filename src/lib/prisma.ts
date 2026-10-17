@@ -1,6 +1,5 @@
 import { PrismaClient } from "@prisma/client";
 
-// Singleton utk hot-reload dev; di production cukup 1 instance Node.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 export const prisma =

@@ -3,11 +3,6 @@ import { timingSafeEqual } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { currentSemester } from "@/lib/academic";
 
-/**
- * GET /api/v1/jadwal[?tanggal=YYYY-MM-DD]      → jadwal aktif semester ini (semua rombel)
- *   + tanggal → difilter ke hari dari tanggal tsb (konvensi 0=Minggu, spt presensi).
- * Auth: Authorization: Bearer $API_TOKEN  ( utk presensi Fase 2: baca jadwal dr LMS )
- */
 function tokenOk(req: NextRequest): boolean {
   const auth = req.headers.get("authorization") ?? "";
   const want = process.env.API_TOKEN ?? "";
@@ -20,15 +15,10 @@ function tokenOk(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   if (!tokenOk(req)) return NextResponse.json({ ok: false, error: "Token tidak valid" }, { status: 401 });
   const ctx = await currentSemester();
-  if (!ctx) return NextResponse.json({ ok: false, error: "Semester aktif belum diset" }, { status: 500 });
+  if (!ctx) return NextResponse.json({ ok: false, error: "Tahun/semester aktif belum ada" }, { status: 404 });
 
-  const tanggal = req.nextUrl.searchParams.get("tanggal");
-  let dayFilter: number | null = null;
-  if (tanggal) {
-    const d = new Date(`${tanggal}T12:00:00`);
-    if (Number.isNaN(d.getTime())) return NextResponse.json({ ok: false, error: "tanggal harus YYYY-MM-DD" }, { status: 400 });
-    dayFilter = d.getDay(); // 0=Minggu…6=Sabtu (sama dgn presensi)
-  }
+  const dayParam = req.nextUrl.searchParams.get("hari");
+  const dayFilter = dayParam && /^[0-6]$/.test(dayParam) ? Number(dayParam) : null;
 
   const rows = await prisma.schedule.findMany({
     where: {
@@ -40,11 +30,11 @@ export async function GET(req: NextRequest) {
         include: {
           subject: true,
           class: { select: { id: true, name: true, tingkat: true } },
-          teacher: { include: { user: { select: { id: true, nama: true, nisn: true } } } },
+          teacher: { select: { id: true, nama: true, nip: true } },
         },
       },
     },
-    orderBy: [{ day: "asc" }, { start: "asc" }],
+    orderBy: [{ day: "asc" }, { startTime: "asc" }],
   });
 
   return NextResponse.json({
@@ -53,15 +43,15 @@ export async function GET(req: NextRequest) {
     total: rows.length,
     jadwal: rows.map((s) => ({
       hari: s.day,
-      mulai: s.start,
-      selesai: s.end,
+      mulai: s.startTime,
+      selesai: s.endTime,
       ruang: s.room,
       rombel: s.assignment.class.name,
-      rombel_id: s.assignment.classId,
+      rombel_id: String(s.assignment.classId),
       mapel: s.assignment.subject.name,
-      mapel_id: s.assignment.subjectId,
-      guru: s.assignment.teacher?.user.nama ?? null,
-      guru_user_id: s.assignment.teacher?.userId ?? null,
+      mapel_id: String(s.assignment.subjectId),
+      guru: s.assignment.teacher?.nama ?? null,
+      guru_user_id: s.assignment.teacher ? String(s.assignment.teacher.id) : null,
     })),
   });
 }

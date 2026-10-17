@@ -10,15 +10,17 @@ export async function addSchedule(formData: FormData) {
   if (!user || user.role !== "ADMIN") throw new Error("Hanya admin");
   const assignmentId = BigInt(String(formData.get("assignmentId") ?? "0"));
   const day = Number(formData.get("day"));
-  const start = String(formData.get("start") ?? "").trim();
-  const end = String(formData.get("end") ?? "").trim();
+  const startTime = String(formData.get("start") ?? "").trim();
+  const endTime = String(formData.get("end") ?? "").trim();
   const room = String(formData.get("room") ?? "").trim() || null;
-  if (!assignmentId || day < 1 || day > 6 || !/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)) {
+  if (!assignmentId || day < 0 || day > 6 || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) {
     redirect(`/jadwal?a=${assignmentId}`);
   }
-  const exists = await prisma.schedule.findFirst({ where: { assignmentId, day, start } });
+  const exists = await prisma.schedule.findUnique({
+    where: { assignmentId_day_startTime: { assignmentId, day, startTime } },
+  });
   if (!exists) {
-    await prisma.schedule.create({ data: { assignmentId, day, start, end, room } });
+    await prisma.schedule.create({ data: { assignmentId, day, startTime, endTime, room } });
     await logAudit({ userId: user.id, action: "JADWAL_TAMBAH", entity: "schedules", entityId: String(assignmentId) });
   }
   revalidatePath("/jadwal");

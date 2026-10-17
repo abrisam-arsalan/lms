@@ -5,25 +5,47 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import type { Role, User } from "@prisma/client";
 
-export const SESSION_COOKIE = "lms_session"; // PRD §2A B4 — nama host-only, anti-bentrok
+export const SESSION_COOKIE = "panglima_session";
 const SESSION_TTL_DAYS = 30;
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
 
-/** Cocokkan password — kompatibel dgn hash lama Laravel ($2y$, CBT) & Bun (presensi). */
-export async function verifyCredentials(
-  username: string,
-  password: string
-): Promise<User | null> {
+/** Cek apakah login harus dibatasi (5 gagal dalam 10 menit). */
+export async function checkLoginThrottle(username: string): Promise<{ throttled: boolean; waitMinutes?: number }> {
+  const since = new Date(Date.now() - 10 * 60_000);
+  const fails = await prisma.loginAttempt.count({
+    where: { username, success: false, createdAt: { gte: since } },
+  });
+  if (fails >= 5) {
+    const last = await prisma.loginAttempt.findFirst({
+      where: { username, success: false },
+      orderBy: { createdAt: "desc" },
+    });
+    if (last) {
+      const waitUntil = new Date(+last.createdAt + 5 * 60_000);
+      if (waitUntil > new Date()) {
+        return { throttled: true, waitMinutes: Math.ceil((+waitUntil - Date.now()) / 60_000) };
+      }
+    }
+  }
+  return { throttled: false };
+}
+
+export async function recordLoginAttempt(username: string, userId: bigint | null, success: boolean, ip?: string | null): Promise<void> {
+  await prisma.loginAttempt.create({
+    data: { username, userId, success, ip: ip ?? "unknown" },
+  }).catch(() => {});
+}
+
+export async function verifyCredentials(username: string, password: string): Promise<User | null> {
   const user = await prisma.user.findUnique({
     where: { username },
-    select: { id: true, username: true, nama: true, passwordHash: true, role: true, isActive: true, deletedAt: true },
   });
   if (!user || !user.isActive || user.deletedAt) return null;
   const ok = await bcrypt.compare(password, user.passwordHash);
-  return ok ? (user as User) : null;
+  return ok ? user : null;
 }
 
 export async function startSession(userId: bigint, ip?: string | null): Promise<void> {
@@ -32,17 +54,16 @@ export async function startSession(userId: bigint, ip?: string | null): Promise<
   await prisma.session.create({ data: { token, userId, expiresAt } });
   await prisma.user.update({
     where: { id: userId },
-    data: { lastLoginAt: new Date() },
+    data: { lastLoginAt: new Date(), lastLoginIp: ip ?? null },
   });
   const jar = await cookies();
   jar.set(SESSION_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production", // HTTPS via Cloudflare Tunnel
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_DAYS * 86_400,
   });
-  void ip;
 }
 
 export async function getSessionUser(): Promise<User | null> {
@@ -63,14 +84,13 @@ export async function getSessionUser(): Promise<User | null> {
   return u;
 }
 
-/** Wajib login (server component / handler). */
 export async function requireUser(): Promise<User> {
   const user = await getSessionUser();
   if (!user) redirect("/login");
+  if (user.mustChangePin) redirect("/change-pin");
   return user;
 }
 
-/** Wajib peran tertentu. */
 export async function requireRole(roles: Role[]): Promise<User> {
   const user = await requireUser();
   if (!roles.includes(user.role)) redirect("/dashboard");
@@ -101,12 +121,11 @@ export async function logAudit(params: {
         action: params.action,
         entity: params.entity,
         entityId: params.entityId,
-        // Json field: valid JSON string → simpan sebagai objek
         detail: (params.detail ?? undefined) as object | undefined,
         ip: params.ip ?? null,
       },
     });
   } catch (e) {
-    console.error("audit log gagal:", e); // audit jangan sampai menjatuhkan request
+    console.error("audit log gagal:", e);
   }
 }

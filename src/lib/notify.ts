@@ -1,40 +1,25 @@
 import { prisma } from "@/lib/prisma";
 
-/** Kirim notifikasi dalam-app ke sekumpulan user (batch, aman utk ribuan). */
-export async function notify(userIds: bigint[], kind: string, message: string, link?: string) {
+export const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+
+export async function createNotification(userId: bigint, kind: string, message: string, link?: string): Promise<void> {
+  await prisma.notification.create({ data: { userId, kind, message, link } }).catch(() => {});
+}
+
+/** Kirim notifikasi ke semua siswa kelas tertentu beserta orang tuanya. */
+export async function notifyClass(classId: bigint, kind: string, message: string, link?: string): Promise<void> {
+  const students = await prisma.user.findMany({
+    where: { classId, role: "SISWA", isActive: true, deletedAt: null },
+    select: { id: true, parentLinksAsAnak: { select: { parentId: true } } },
+  });
+  const userIds: bigint[] = [];
+  for (const s of students) {
+    userIds.push(s.id);
+    for (const p of s.parentLinksAsAnak) userIds.push(p.parentId);
+  }
   if (!userIds.length) return;
   await prisma.notification.createMany({
-    data: userIds.map((userId) => ({ userId, kind, message, link: link ?? null })),
-  });
+    data: userIds.map((uid) => ({ userId: uid, kind, message, link })),
+    skipDuplicates: true,
+  }).catch(() => {});
 }
-
-export async function siswaIdsOfClass(classId: bigint): Promise<bigint[]> {
-  const rows = await prisma.student.findMany({
-    where: { classId, user: { isActive: true, deletedAt: null } },
-    select: { userId: true },
-  });
-  return rows.map((r) => r.userId);
-}
-
-export async function ortuIdsOfClass(classId: bigint): Promise<bigint[]> {
-  const rows = await prisma.linkParentStudent.findMany({
-    where: { studentRec: { classId, user: { isActive: true, deletedAt: null } } },
-    select: { parentId: true },
-  });
-  return [...new Set(rows.map((r) => r.parentId))];
-}
-
-export async function notifyStudentsOfClass(classId: bigint, kind: string, message: string, link?: string) {
-  await notify(await siswaIdsOfClass(classId), kind, message, link);
-}
-
-/** utk pengumuman SEMUA — hemat: cukup siswa + ortu */
-export async function allSiswaOrtuIds(): Promise<bigint[]> {
-  const rows = await prisma.user.findMany({
-    where: { role: { in: ["SISWA", "ORTU"] }, isActive: true, deletedAt: null },
-    select: { id: true },
-  });
-  return rows.map((r) => r.id);
-}
-
-export const DAYS = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];

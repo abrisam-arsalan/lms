@@ -40,7 +40,7 @@ export async function commitImport(formData: FormData) {
   const admin = await guard();
   const rev = String(formData.get("rev") ?? "").replace(/[^0-9a-f]/g, "").slice(0, 32);
   const kind: ImportKind = formData.get("kind") === "guru" ? "guru" : "siswa";
-  const tmpPass = String(formData.get("tmpPass") ?? "").trim() || "Smp5Tegal!2026";
+  const tmpPass = String(formData.get("tmpPass") ?? "").trim() || "123456";
   const file = path.join(IMPORT_DIR, `${rev}.csv`);
   let text: string;
   try {
@@ -62,14 +62,18 @@ export async function commitImport(formData: FormData) {
 
   for (const r of rows) {
     if (r.status === "ERR") { result.skipped++; result.errors.push(`baris ${r.line}: ${r.reason}`); continue; }
-    const exist = await prisma.user.findUnique({ where: { username: r.username }, select: { id: true, nama: true, student: { select: { id: true } } } });
+    const exist = await prisma.user.findUnique({ where: { username: r.username }, select: { id: true, nama: true } });
     if (exist) { result.existing++; continue; }
 
     if (kind === "guru") {
       await prisma.user.create({
         data: {
-          username: r.username, nama: r.nama, role: "GURU", passwordHash: hash,
-          teacher: { create: { nip: r.nip || null, nama: r.nama } },
+          username: r.username,
+          nama: r.nama,
+          role: "GURU",
+          passwordHash: hash,
+          nip: r.nip || null,
+          mustChangePin: true,
         },
       });
     } else {
@@ -80,15 +84,20 @@ export async function commitImport(formData: FormData) {
           data: { name: r.rombel!, tingkat, academicYearId: ctx.year.id },
           select: { id: true, name: true },
         });
-        classCache.set(created.name, created.id);
+        classCache.set(created.name.toUpperCase(), created.id);
         classId = created.id;
         result.rombelBaru.push(r.rombel!);
       }
       await prisma.user.create({
         data: {
-          username: r.username, nama: r.nama, role: "SISWA", passwordHash: hash,
-          nis: r.nis || null, nisn: r.nisn || null,
-          student: { create: { classId } },
+          username: r.username,
+          nama: r.nama,
+          role: "SISWA",
+          passwordHash: hash,
+          nis: r.nis || null,
+          nisn: r.nisn || null,
+          classId,
+          mustChangePin: true,
         },
       });
     }

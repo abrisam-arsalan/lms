@@ -36,23 +36,31 @@ export async function addUser(formData: FormData) {
 
   const u = await prisma.user.create({
     data: {
-      username, nama, role: role as never, passwordHash: hash,
-      nis: nis || null, nisn: nisn || null,
-      ...(role === "GURU" || role === "KEPSEK" || role === "ADMIN"
-        ? { teacher: nip || role === "GURU" ? { create: { nip: nip || null, nama } } : undefined }
-        : {}),
-      ...(role === "SISWA" ? { student: { create: { classId } } } : {}),
+      username,
+      nama,
+      role: role as never,
+      passwordHash: hash,
+      nis: nis || null,
+      nisn: nisn || null,
+      nip: nip || null,
+      classId: role === "SISWA" ? classId : null,
     },
   });
+
   // ortu → tauti anak lewat NISN anak
   if (role === "ORTU") {
     const anakNisn = clean(formData.get("anakNisn"), 32);
     if (anakNisn) {
-      const anak = await prisma.student.findFirst({ where: { user: { nisn: anakNisn } } });
-      if (anak) await prisma.linkParentStudent.create({ data: { parentId: u.id, studentId: anak.id } });
+      const anak = await prisma.user.findFirst({ where: { nisn: anakNisn, role: "SISWA" } });
+      if (anak) {
+        await prisma.parentLink.create({
+          data: { parentId: u.id, childId: anak.id },
+        });
+      }
     }
   }
-  await logAudit({ userId: admin.id, action: "USER_BAU", entity: "users", entityId: String(u.id), detail: { role, username } });
+
+  await logAudit({ userId: admin.id, action: "USER_BARU", entity: "users", entityId: String(u.id), detail: { role, username } });
   back("");
 }
 
@@ -83,12 +91,24 @@ export async function editUser(formData: FormData) {
   const nama = clean(formData.get("nama"), 120);
   const nis = clean(formData.get("nis"), 32) || null;
   const nisn = clean(formData.get("nisn"), 32) || null;
+  const nip = clean(formData.get("nip"), 32) || null;
   const classId = BigInt(clean(formData.get("classId"), 20) || "0") || null;
   if (!id || !nama) back("?err=Nama%20wajib%20diisi");
-  const u = await prisma.user.findUnique({ where: { id }, include: { student: true } });
+
+  const u = await prisma.user.findUnique({ where: { id } });
   if (!u) return;
-  await prisma.user.update({ where: { id }, data: { nama, ...(nis ? { nis } : {}), ...(nisn ? { nisn } : {}) } });
-  if (u.student) await prisma.student.update({ where: { userId: id }, data: { classId: classId ?? u.student.classId } });
+
+  await prisma.user.update({
+    where: { id },
+    data: {
+      nama,
+      ...(nis !== null ? { nis } : {}),
+      ...(nisn !== null ? { nisn } : {}),
+      ...(nip !== null ? { nip } : {}),
+      ...(u.role === "SISWA" && classId ? { classId } : {}),
+    },
+  });
+
   await logAudit({ userId: admin.id, action: "USER_UBAH", entity: "users", entityId: String(id), detail: { lama: u.nama, baru: nama } });
   back("");
 }

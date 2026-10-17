@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { currentSemester } from "@/lib/academic";
 
 /**
- * GET /api/v1/siswa → daftar siswa AKTIF + rombelnya (sumber kebenaran: LMS).
- * Auth: Authorization: Bearer $API_TOKEN  ( utk presensi/CBT Fase 2 )
+ * GET /api/v1/siswa → daftar siswa AKTIF + rombelnya.
+ * Auth: Authorization: Bearer $API_TOKEN
  */
 function tokenOk(req: NextRequest): boolean {
   const auth = req.headers.get("authorization") ?? "";
@@ -19,29 +19,35 @@ function tokenOk(req: NextRequest): boolean {
 export async function GET(req: NextRequest) {
   if (!tokenOk(req)) return NextResponse.json({ ok: false, error: "Token tidak valid" }, { status: 401 });
   const ctx = await currentSemester();
-  const rows = await prisma.student.findMany({
+  const rows = await prisma.user.findMany({
     where: {
-      user: { isActive: true, deletedAt: null, role: "SISWA" },
-      ...(ctx ? { class: { academicYearId: ctx.year.id } } : {}),
+      isActive: true,
+      deletedAt: null,
+      role: "SISWA",
+      ...(ctx ? { classRef: { academicYearId: ctx.year.id } } : {}),
     },
-    include: {
-      user: { select: { id: true, nama: true, nis: true, nisn: true, username: true } },
-      class: { select: { id: true, name: true, tingkat: true } },
+    select: {
+      id: true,
+      nama: true,
+      nis: true,
+      nisn: true,
+      username: true,
+      classRef: { select: { id: true, name: true, tingkat: true } },
     },
-    orderBy: { user: { nama: "asc" } },
+    orderBy: { nama: "asc" },
   });
   return NextResponse.json({
     ok: true,
     total: rows.length,
     siswa: rows.map((s) => ({
-      user_id: String(s.user.id),
-      nama: s.user.nama,
-      nis: s.user.nis,
-      nisn: s.user.nisn,
-      username: s.user.username,
-      rombel: s.class?.name ?? null,
-      rombel_id: s.class ? String(s.class.id) : null,
-      tingkat: s.class?.tingkat ?? null,
+      user_id: String(s.id),
+      nama: s.nama,
+      nis: s.nis,
+      nisn: s.nisn,
+      username: s.username,
+      rombel: s.classRef?.name ?? null,
+      rombel_id: s.classRef ? String(s.classRef.id) : null,
+      tingkat: s.classRef?.tingkat ?? null,
     })),
   });
 }

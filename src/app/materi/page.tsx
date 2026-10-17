@@ -7,7 +7,7 @@ import {
 } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
-import { createMateri, updateMateri, deleteMateri, addMateriFile, deleteMateriFile, markRead } from "./actions";
+import { createMateri, updateMateri, deleteMateri, uploadMateriFile, deleteMateriFile, markRead } from "./actions";
 
 const fmt = (d: Date | null) => (d ? new Date(d).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—");
 const size = (b: bigint) => `${(Number(b) / 1024).toFixed(0)} KB`;
@@ -95,7 +95,7 @@ export default async function MateriPage({
       ? await teacherAssignments(user.id, semesterId)
       : await prisma.assignment.findMany({
           where: { ...(semesterId ? { semesterId } : {}) },
-          include: { subject: true, class: true, teacher: { include: { user: { select: { nama: true } } } } },
+          include: { subject: true, class: true, teacher: { select: { nama: true } } },
           orderBy: [{ class: { name: "asc" } }, { subject: { name: "asc" } }],
         });
 
@@ -139,7 +139,7 @@ export default async function MateriPage({
   });
   if (!assignment) notFound();
   const ro = user.role === "KEPSEK";
-  const jmlSiswa = await prisma.student.count({ where: { classId: assignment.classId } });
+  const jmlSiswa = await prisma.user.count({ where: { classId: assignment.classId, role: "SISWA", isActive: true, deletedAt: null } });
 
   return (
     <AppShell user={user} active="/materi">
@@ -219,7 +219,7 @@ export default async function MateriPage({
             </div>
             {!ro && (
               <div className="row-actions" style={{ marginTop: 8 }}>
-                <form action={addMateriFile} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <form action={uploadMateriFile} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                   <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                   <input type="hidden" name="materialId" value={String(m.id)} />
                   <input className="input" style={{ width: "auto", minWidth: 200 }} type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" required />

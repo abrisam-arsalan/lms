@@ -1,40 +1,58 @@
-# LMS SMP Negeri 5 Tegal
+# Portal Panglima — SMPN 5 Tegal
 
-Inti belajar-mengajar: materi, tugas, **gradebook berbasis TP** (Tujuan Pembelajaran
-diset guru, kode mengikuti app rapor kementerian), jadwal, pengumuman.
-Ekspor Excel per jenjang siap copy-paste ke format import kementerian.
+Portal terpadu: LMS + Presensi + MPI dalam satu aplikasi Next.js.
+Ujian (CBT) tetap terpisah di domain sendiri, sinkron via VIEW & API.
 
-- **PRD**: lihat `PRD-LMS-SMP.md` di workspace (v1.3.1) — keputusan produk & anti-bentrok
-- **Server/ops**: `docs/RUNBOOK.md` — pola sekolah: *developer push → GitHub, server tinggal pull*
-- **Port**: 3005 · **DB**: MariaDB `smp_lms` · **Domain**: lms.smp5tegal.sch.id
+## Stack
+- Next.js 15 (App Router, standalone output)
+- Prisma 6 + MariaDB 11.8
+- TypeScript, no Tailwind (CSS custom neo-brutalism sekolah)
 
-## Development (laptop)
-
+## Setup lokal (dev)
 ```bash
-cp .env.example .env       # DATABASE_URL lokal/ssh-tunnel ke server utk dev db;
-                           # atau skip: node --env-file=.env scripts/seed-demo.mjs
-npm install                # postinstall: prisma generate (client + cbt-readonly + engine linux)
-npx prisma migrate dev     # saat DATABASE_URL dev tersedia
-npm run dev                # http://localhost:3000 (dev saja; produksi 3005)
+npm install
+cp .env.example .env   # isi DATABASE_URL, AUTH_SECRET, API_TOKEN
+npx prisma migrate dev --name init
+node scripts/reset-admin.mjs
+npm run dev
 ```
 
-## Rilis
-
+## Deploy ke server (pull dari GitHub)
 ```bash
-bash scripts/deploy.sh     # build di laptop → branch `deploy` → push. Lalu di server: git pull + restart
+git pull
+npm ci --omit=dev
+npx prisma migrate deploy
+npm run build
+# restart systemd: sudo systemctl restart panglima
 ```
 
-## Struktur
+## Variabel ENV wajib
+| Variabel | Keterangan |
+|---|---|
+| `DATABASE_URL` | `mysql://panglima_user:PASS@127.0.0.1:3306/panglima` |
+| `AUTH_SECRET` | 64-char hex random |
+| `API_TOKEN` | Token untuk push skor dari CBT |
+| `CBT_HANDOFF_SECRET` | Shared secret handoff portal → CBT |
+| `CBT_BASE_URL` | `https://ujian.smp5tegal.sch.id` |
+| `PORT` | `3005` |
+| `HOST` | `127.0.0.1` |
+| `NODE_ENV` | `production` |
+| `SCHOOL_NAME` | `SMP Negeri 5 Tegal` |
+| `SCHOOL_ACADEMIC_YEAR` | `2026/2027` |
+| `SCHOOL_SEMESTER_NUMBER` | `1` |
 
-```
-src/app/          halaman & API route (Next.js App Router)
-src/lib/          prisma singleton, auth sesi (cookie lms_session)
-src/middleware.ts gerbang login kasar
-prisma/           schema utama + cbt-readonly (bootstrap)
-scripts/          deploy.sh, bootstrap.mjs (migrasi M0), seed-demo
-scripts-server/   backup-lms.sh (cron 02:30 → sdb)
-deploy/           lms.service, nginx vhost, ingress tunnel, db.sql
-docs/             RUNBOOK.md
-```
-
-⚠️ Jangan pernah commit data PII siswa (file contoh nilai kementerian disimpan di luar repo).
+## Struktur modul
+- `/login` — login semua peran
+- `/dashboard` — ringkasan semua modul
+- `/presensi` — sesi mengajar & absensi (guru)
+- `/rekap-presensi` — rekap kehadiran (semua peran sesuai hak)
+- `/materi` — materi per assignment
+- `/tugas` — tugas + submission
+- `/nilai` — gradebook TP
+- `/tp` — kelola Tujuan Pembelajaran
+- `/jadwal` — jadwal mingguan
+- `/pengumuman` — pengumuman sekolah
+- `/mpi` — game edukasi MPI
+- `/ujian` — info ujian + tombol handoff ke CBT
+- `/notifikasi` — notifikasi in-app
+- `/admin/*` — kelola akun, rombel, master, import, jadwal admin

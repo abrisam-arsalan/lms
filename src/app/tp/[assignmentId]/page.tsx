@@ -23,7 +23,7 @@ export default async function TpEditPage({
     include: {
       subject: true,
       class: true,
-      teacher: { include: { user: { select: { nama: true } } } },
+      teacher: { select: { nama: true } },
       learningTargets: { orderBy: { urutan: "asc" } },
     },
   });

@@ -102,7 +102,8 @@ export async function addAssessment(formData: FormData) {
   const nama = String(formData.get("nama") ?? "").trim();
   if (!nama) redirect(`/nilai?a=${assignmentId}&err=nama`);
   const tpId = formData.get("tpId") ? BigInt(String(formData.get("tpId"))) : null;
-  await prisma.manualAssessment.create({ data: { assignmentId, nama, tpId } });
+  const keterangan = String(formData.get("keterangan") ?? "").trim();
+  await prisma.manualAssessment.create({ data: { assignmentId, nama, keterangan, tpId } });
   revalidatePath(`/nilai?a=${assignmentId}`);
   redirect(`/nilai?a=${assignmentId}`);
 }

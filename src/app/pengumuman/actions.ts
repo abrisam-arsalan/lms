@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser, logAudit } from "@/lib/auth";
-import { notify, notifyStudentsOfClass, ortuIdsOfClass, allSiswaOrtuIds } from "@/lib/notify";
+import { notifyClass, createNotification } from "@/lib/notify";
 
 export async function createAnnouncement(formData: FormData) {
   const user = await getSessionUser();
@@ -18,9 +18,8 @@ export async function createAnnouncement(formData: FormData) {
   let classId: bigint | null = classIdRaw || null;
   if (classId) {
     if (user.role === "GURU") {
-      // guru hanya boleh ke rombel yang ia ajar / ia wali
       const boleh =
-        (await prisma.assignment.count({ where: { classId, teacher: { userId: user.id } } })) > 0 ||
+        (await prisma.assignment.count({ where: { classId, teacherId: user.id } })) > 0 ||
         (await prisma.class.count({ where: { id: classId, homeroomUserId: user.id } })) > 0;
       if (!boleh) throw new Error("Bukan rombel-mu");
     }
@@ -31,13 +30,18 @@ export async function createAnnouncement(formData: FormData) {
   const p = await prisma.announcement.create({
     data: { judul, isi, target: classId ? "KELAS" : "SEMUA", classId, authorId: user.id },
   });
-  await logAudit({ userId: user.id, action: "PENGUMUMAN_BAU", entity: "announcements", entityId: String(p.id) });
+  await logAudit({ userId: user.id, action: "PENGUMUMAN_BARU", entity: "announcements", entityId: String(p.id) });
 
   if (classId) {
-    await notifyStudentsOfClass(classId, "pengumuman", `📢 ${judul}`, "/pengumuman");
-    await notify(await ortuIdsOfClass(classId), "pengumuman", `📢 ${judul}`, "/pengumuman");
+    await notifyClass(classId, "pengumuman", `📢 ${judul}`, "/pengumuman");
   } else {
-    await notify(await allSiswaOrtuIds(), "pengumuman", `📢 ${judul}`, "/pengumuman");
+    const allUsers = await prisma.user.findMany({
+      where: { role: { in: ["SISWA", "ORTU", "GURU"] }, isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+    for (const u of allUsers) {
+      await createNotification(u.id, "pengumuman", `📢 ${judul}`, "/pengumuman");
+    }
   }
   revalidatePath("/pengumuman");
   redirect("/pengumuman");

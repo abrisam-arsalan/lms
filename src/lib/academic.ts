@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import type { Role, User } from "@prisma/client";
+import type { User } from "@prisma/client";
 
-/** Tahun ajaran aktif + semester (dari env SCHOOL_SEMESTER_NUMBER). */
 export async function currentSemester() {
   const year =
     (await prisma.academicYear.findFirst({ where: { isActive: true }, orderBy: { id: "desc" } })) ??
@@ -14,47 +13,56 @@ export async function currentSemester() {
   return semester ? { year, semester } : null;
 }
 
-/** Rombel×mapel yang diajar guru ini semester aktif. */
+/** Rombel×mapel yang diajar guru ini (teacherId langsung di Assignment). */
 export async function teacherAssignments(userId: bigint, semesterId?: bigint) {
   return prisma.assignment.findMany({
-    where: { teacher: { userId }, ...(semesterId ? { semesterId } : {}) },
-    include: { subject: true, class: true, teacher: { include: { user: { select: { nama: true } } } } },
+    where: { teacherId: userId, ...(semesterId ? { semesterId } : {}) },
+    include: { subject: true, class: true, teacher: true },
     orderBy: [{ class: { name: "asc" } }, { subject: { name: "asc" } }],
   });
 }
 
-/** Rombel milik siswa (lewat student record); null utk peran lain. */
-export async function studentClassId(userId: bigint) {
-  const s = await prisma.student.findUnique({ where: { userId }, select: { classId: true } });
-  return s?.classId ?? null;
+/** classId siswa dari users.classId langsung. */
+export async function studentClassId(userId: bigint): Promise<bigint | null> {
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { classId: true } });
+  return u?.classId ?? null;
 }
 
-/** Anak-anak utk akun ortu. */
-export async function childrenOfClassIds(userId: bigint) {
-  const links = await prisma.linkParentStudent.findMany({
+/** classId anak untuk akun ortu via parent_links. */
+export async function childrenOfClassIds(userId: bigint): Promise<bigint[]> {
+  const links = await prisma.parentLink.findMany({
     where: { parentId: userId },
-    include: { studentRec: { select: { classId: true } } },
+    include: { child: { select: { classId: true } } },
   });
-  return links.map((l) => l.studentRec.classId).filter((c): c is bigint => c !== null);
+  return links.map((l) => l.child.classId).filter((c): c is bigint => c !== null);
 }
 
-/** Assignment yg boleh dilihat user pada kelas2 tsb (siswa/ortu). */
+/** childUserId dari akun ortu. */
+export async function childrenUserIds(userId: bigint): Promise<bigint[]> {
+  const links = await prisma.parentLink.findMany({ where: { parentId: userId }, select: { childId: true } });
+  return links.map((l) => l.childId);
+}
+
+/** Assignment yang bisa dilihat per kelas. */
 export async function classAssignments(classIds: bigint[], semesterId?: bigint) {
   if (!classIds.length) return [];
   return prisma.assignment.findMany({
     where: { classId: { in: classIds }, ...(semesterId ? { semesterId } : {}) },
-    include: { subject: true, class: true, teacher: { include: { user: { select: { nama: true } } } } },
+    include: { subject: true, class: true },
     orderBy: [{ class: { name: "asc" } }, { subject: { name: "asc" } }],
   });
 }
 
-/** Cek kepemilikan assignment utk aksi guru; admin selalu boleh. */
+/** Cek apakah guru bisa kelola assignment ini. */
 export async function canManageAssignment(user: User, assignmentId: bigint): Promise<boolean> {
   if (user.role === "ADMIN") return true;
   if (user.role !== "GURU") return false;
-  const a = await prisma.assignment.findFirst({
-    where: { id: assignmentId, teacher: { userId: user.id } },
-    select: { id: true },
-  });
+  const a = await prisma.assignment.findFirst({ where: { id: assignmentId, teacherId: user.id }, select: { id: true } });
   return !!a;
+}
+
+/** Wali kelas: classId yang dia ampu. */
+export async function homeroomClassId(userId: bigint): Promise<bigint | null> {
+  const cls = await prisma.class.findFirst({ where: { homeroomUserId: userId }, select: { id: true } });
+  return cls?.id ?? null;
 }

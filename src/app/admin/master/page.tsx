@@ -23,15 +23,15 @@ export default async function AdminMasterPage({
           include: {
             subject: true,
             class: true,
-            teacher: { include: { user: { select: { id: true, nama: true } } } },
+            teacher: { select: { id: true, nama: true } },
             _count: { select: { learningTargets: true, materials: true, tasks: true } },
           },
           orderBy: [{ class: { name: "asc" } }, { subject: { name: "asc" } }],
         })
       : Promise.resolve([]),
-    prisma.teacher.findMany({
-      where: { user: { isActive: true, deletedAt: null } },
-      include: { user: { select: { id: true, nama: true } } },
+    prisma.user.findMany({
+      where: { role: "GURU", isActive: true, deletedAt: null },
+      select: { id: true, nama: true },
       orderBy: { nama: "asc" },
     }),
     prisma.subject.findMany({ orderBy: { name: "asc" } }),
@@ -39,7 +39,7 @@ export default async function AdminMasterPage({
       ? prisma.class.findMany({
           where: { academicYearId: ctx.year.id },
           orderBy: { name: "asc" },
-          include: { homeroomTeacher: { select: { id: true, nama: true } } },
+          include: { homeroom: { select: { id: true, nama: true } } },
         })
       : Promise.resolve([]),
   ]);
@@ -64,7 +64,7 @@ export default async function AdminMasterPage({
                 <label className="field-label">Guru</label>
                 <select className="input" name="teacherUserId" required defaultValue="">
                   <option value="" disabled>— pilih guru —</option>
-                  {teachers.map((t) => <option key={String(t.id)} value={String(t.user.id)}>{t.nama}</option>)}
+                  {teachers.map((t) => <option key={String(t.id)} value={String(t.id)}>{t.nama}</option>)}
                 </select>
               </div>
               <div className="field" style={{ margin: 0, minWidth: 160 }}>
@@ -97,7 +97,7 @@ export default async function AdminMasterPage({
                 <tr key={String(a.id)}>
                   <td><b>{a.class.name}</b></td>
                   <td>{a.subject.name}</td>
-                  <td>{a.teacher?.user.nama ?? "—"}</td>
+                  <td>{a.teacher?.nama ?? "—"}</td>
                   <td className="muted">{a._count.learningTargets} · {a._count.materials} · {a._count.tasks}</td>
                   <td>
                     <a className="pill" href={`/nilai?a=${a.id}`}>nilai</a>{" "}
@@ -127,13 +127,13 @@ export default async function AdminMasterPage({
                 {classes.map((k) => (
                   <tr key={String(k.id)}>
                     <td><b>{k.name}</b></td>
-                    <td>{k.homeroomTeacher?.nama ?? "—"}</td>
+                    <td>{k.homeroom?.nama ?? "—"}</td>
                     <td>
                       <form action={setHomeroom} style={{ display: "flex", gap: 6 }}>
                         <input type="hidden" name="classId" value={String(k.id)} />
                         <select className="input" style={{ minHeight: 34, width: 220 }} name="homeroomUserId" defaultValue="">
                           <option value="">— kosongkan —</option>
-                          {teachers.map((t) => <option key={String(t.id)} value={String(t.user.id)}>{t.nama}</option>)}
+                          {teachers.map((t) => <option key={String(t.id)} value={String(t.id)}>{t.nama}</option>)}
                         </select>
                         <button className="btn btn-sm">set</button>
                       </form>

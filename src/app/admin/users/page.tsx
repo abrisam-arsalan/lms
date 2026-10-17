@@ -23,7 +23,7 @@ export default async function AdminUsersPage({
   const { err, q, role } = await searchParams;
   const ctx = await currentSemester();
 
-  const [users, classes, idents] = await Promise.all([
+  const [users, classes] = await Promise.all([
     prisma.user.findMany({
       where: {
         ...(role && ["ADMIN", "GURU", "SISWA", "ORTU", "KEPSEK"].includes(role) ? { role: role as never } : {}),
@@ -31,10 +31,9 @@ export default async function AdminUsersPage({
       },
       orderBy: [{ role: "asc" }, { nama: "asc" }],
       take: 300,
-      include: { student: { include: { class: { select: { name: true } } } } },
+      include: { classRef: { select: { name: true } } },
     }),
     ctx ? prisma.class.findMany({ where: { academicYearId: ctx.year.id }, orderBy: { name: "asc" } }) : Promise.resolve([]),
-    prisma.identity.groupBy({ by: ["app"], _count: { _all: true } }),
   ]);
 
   return (
@@ -42,8 +41,7 @@ export default async function AdminUsersPage({
       <div className="page-head">
         <h1>Kelola Akun 👥</h1>
         <p>
-          <a href="/admin/master">🗂 Master &amp; assignmen</a> · <a href="/admin/import">📥 Import CSV</a>{" "}
-          · identitas asal: {idents.map((i) => `${i.app}=${i._count._all}`).join(" · ") || "—"}
+          <a href="/admin/master">🗂 Master &amp; assignmen</a> · <a href="/admin/import">📥 Import CSV</a>
         </p>
         {err && <p className="error">{decodeURIComponent(err)}</p>}
       </div>
@@ -61,8 +59,8 @@ export default async function AdminUsersPage({
                 <input className="input" name="username" required maxLength={64} /></div>
               <div className="field"><label className="field-label">Nama lengkap</label>
                 <input className="input" name="nama" required /></div>
-              <div className="field"><label className="field-label">Password sementara</label>
-                <input className="input" name="password" placeholder="Smp5Tegal!2026" /></div>
+              <div className="field"><label className="field-label">PIN / Password sementara</label>
+                <input className="input" name="password" placeholder="123456" /></div>
               <div className="field"><label className="field-label">NIS (siswa, opsional)</label>
                 <input className="input" name="nis" /></div>
               <div className="field"><label className="field-label">NISN (siswa, opsional)</label>
@@ -106,7 +104,7 @@ export default async function AdminUsersPage({
                   <td>{u.nama}</td>
                   <td>{u.nisn ?? "—"}</td>
                   <td><span className={`badge ${ROLE_BADGE[u.role]}`}>{ROLE_LABEL[u.role]}</span></td>
-                  <td>{u.student?.class?.name ?? "—"}</td>
+                  <td>{u.classRef?.name ?? "—"}</td>
                   <td>{u.isActive ? <span className="badge badge-green">aktif</span> : <span className="badge badge-red">nonaktif</span>}</td>
                   <td>
                     <div className="row-actions">
@@ -114,7 +112,7 @@ export default async function AdminUsersPage({
                         <summary className="pill" style={{ cursor: "pointer" }}>🔑</summary>
                         <form action={resetPassword} style={{ display: "flex", gap: 6, marginTop: 6 }}>
                           <input type="hidden" name="id" value={String(u.id)} />
-                          <input className="input" style={{ width: 150, minHeight: 34 }} name="password" placeholder="password baru" required minLength={6} />
+                          <input className="input" style={{ width: 150, minHeight: 34 }} name="password" placeholder="PIN/password baru" required minLength={6} />
                           <button className="btn btn-sm">reset</button>
                         </form>
                       </details>
@@ -125,7 +123,7 @@ export default async function AdminUsersPage({
                           <input className="input" style={{ minHeight: 34 }} name="nama" defaultValue={u.nama} required />
                           <input className="input" style={{ minHeight: 34 }} name="nis" defaultValue={u.nis ?? ""} placeholder="NIS" />
                           <input className="input" style={{ minHeight: 34 }} name="nisn" defaultValue={u.nisn ?? ""} placeholder="NISN" />
-                          <select className="input" style={{ minHeight: 34 }} name="classId" defaultValue={u.student?.classId ? String(u.student.classId) : ""}>
+                          <select className="input" style={{ minHeight: 34 }} name="classId" defaultValue={u.classId ? String(u.classId) : ""}>
                             <option value="">rombel tetap</option>
                             {classes.map((k) => <option key={String(k.id)} value={String(k.id)}>{k.name}</option>)}
                           </select>
