@@ -1,10 +1,11 @@
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import AppShell from "@/components/app-shell";
+import { broadcastExamsAction, syncStudentsAction } from "@/app/ujian/actions";
 
 export default async function AdminUjianPage() {
   const user = await requireRole(["ADMIN"]);
-  const cbtBaseUrl = process.env.CBT_BASE_URL ?? "https://ujian.smpn5tegal.sch.id";
+  const cbtBaseUrl = process.env.CBT_BASE_URL || "http://localhost:8000";
 
   const totalSiswa = await prisma.user.count({
     where: { role: "SISWA", isActive: true, deletedAt: null },
@@ -14,9 +15,29 @@ export default async function AdminUjianPage() {
 
   return (
     <AppShell user={user} active="/admin/ujian">
-      <div className="page-head">
-        <h1>Integrasi Sistem Ujian (CBT) 📋</h1>
-        <p>Sinkronisasi data siswa ke engine Ujian dan penerimaan hasil asesmen sumatif.</p>
+      <div className="breadcrumb">
+        <a href="/dashboard">Beranda</a>
+        <span className="sep">&gt;</span>
+        <span className="current">Integrasi CBT</span>
+      </div>
+
+      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>Integrasi Sistem Ujian (CBT) 📋</h1>
+          <p>Sinkronisasi data siswa ke engine Ujian dan penerimaan hasil asesmen sumatif.</p>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <form action={broadcastExamsAction}>
+            <button className="btn btn-sm btn-yellow btn-block-mobile" type="submit">
+              📢 Siarkan Notifikasi Ujian
+            </button>
+          </form>
+          <form action={syncStudentsAction}>
+            <button className="btn btn-sm btn-primary btn-block-mobile" type="submit">
+              👥 Sync Siswa ke CBT
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className="stat-grid small" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 20 }}>
@@ -34,38 +55,43 @@ export default async function AdminUjianPage() {
       </div>
 
       <div className="card">
-        <div className="card-head">
-          <h2>Status Koneksi & Endpoint</h2>
+        <div className="card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          <h2>Status Koneksi &amp; Endpoint CBT</h2>
+          <span className="badge badge-green">PORT 8000 AKTIF</span>
         </div>
         <div className="card-body">
-          <table className="table" style={{ width: "100%" }}>
-            <tbody>
-              <tr>
-                <td style={{ width: 220, fontWeight: "bold" }}>Base URL CBT</td>
-                <td><code>{cbtBaseUrl}</code></td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: "bold" }}>Endpoint Siswa</td>
-                <td><code>GET /api/v1/siswa</code> (Auth: Bearer PANGLIMA_SYNC_TOKEN)</td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: "bold" }}>Endpoint Jadwal</td>
-                <td><code>GET /api/v1/jadwal</code> (Auth: Bearer PANGLIMA_SYNC_TOKEN)</td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: "bold" }}>Endpoint Push Skor CBT</td>
-                <td><code>POST /api/v1/tp-skor</code> (Auth: Bearer PANGLIMA_SYNC_TOKEN)</td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: "bold" }}>Endpoint SSO Handoff</td>
-                <td><code>GET /api/v1/cbt/handoff-verify?code=...</code></td>
-              </tr>
-            </tbody>
-          </table>
+          <div className="table-wrap" style={{ overflowX: "auto" }}>
+            <table className="table" style={{ width: "100%" }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: 220, fontWeight: "bold" }}>Base URL CBT</td>
+                  <td><code>{cbtBaseUrl}</code></td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Endpoint Siswa</td>
+                  <td><code>GET /api/v1/siswa</code> (Auth: Bearer API_TOKEN)</td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Endpoint Jadwal</td>
+                  <td><code>GET /api/v1/jadwal</code> (Auth: Bearer API_TOKEN)</td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: "bold" }}>Endpoint Push Skor CBT</td>
+                  <td><code>POST /api/v1/tp-skor</code> (Auth: Bearer API_TOKEN)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-          <div style={{ marginTop: 20 }}>
-            <a className="btn btn-primary" href={`${cbtBaseUrl}/admin/sync`} target="_blank" rel="noopener noreferrer">
-              Buka Panel Tarik Data di CBT →
+          <div style={{ marginTop: 20, display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <a className="btn btn-primary btn-block-mobile" href={`${cbtBaseUrl}/admin/bank`} target="_blank" rel="noopener noreferrer">
+              📚 Buka Bank Soal CBT ↗
+            </a>
+            <a className="btn btn-block-mobile" href={`${cbtBaseUrl}/admin/monitoring`} target="_blank" rel="noopener noreferrer">
+              📋 Buka Monitoring Ujian ↗
+            </a>
+            <a className="btn btn-yellow btn-block-mobile" href={`${cbtBaseUrl}/admin/login`} target="_blank" rel="noopener noreferrer">
+              🔑 Halaman Login Admin CBT ↗
             </a>
           </div>
         </div>
