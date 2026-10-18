@@ -77,17 +77,17 @@ export default async function PengumumanPage({
             <form action={createAnnouncement}>
               <div className="field">
                 <label className="field-label">Judul Pengumuman</label>
-                <input className="input" name="judul" placeholder="mis. Jadwal Asesmen Sumatif Tengah Semester Genap" required />
+                <input className="input" name="judul" placeholder="mis. Jadwal Asesmen Sumatif Tengah Semester Genap" required style={{ minHeight: 44 }} />
               </div>
               <div className="field">
                 <label className="field-label">Isi Pengumuman Lengkap</label>
-                <textarea className="input" name="isi" rows={4} placeholder="Tuliskan isi pengumuman atau instruksi penting kepada warga sekolah…" required />
+                <textarea className="input" name="isi" rows={4} placeholder="Tuliskan isi pengumuman atau instruksi penting kepada warga sekolah…" required style={{ minHeight: 88 }} />
               </div>
-              <div className="field" style={{ maxWidth: 360 }}>
+              <div className="field" style={{ maxWidth: 420 }}>
                 <label className="field-label">
-                  Sasaran Penerima {user.role === "GURU" ? "(Guru: Pilih Rombel Binaanmu)" : ""}
+                  Sasaran Penerima {user.role === "GURU" ? "(Pilih Rombel Binaanmu)" : ""}
                 </label>
-                <select className="input" name="classId" defaultValue={user.role === "GURU" ? "" : "0"}>
+                <select className="input" name="classId" defaultValue={user.role === "GURU" ? "" : "0"} style={{ minHeight: 44 }}>
                   {user.role === "ADMIN" && <option value="0">📣 Seluruh Sekolah (Semua Pengguna)</option>}
                   {user.role === "GURU" && <option value="">— Pilih Rombel Binaan —</option>}
                   {kelasOptions.map((k) => (
@@ -95,8 +95,10 @@ export default async function PengumumanPage({
                   ))}
                 </select>
               </div>
-              <div style={{ marginTop: 8 }}>
-                <button className="btn btn-primary" type="submit">📢 Publikasikan Pengumuman</button>
+              <div style={{ marginTop: 12 }}>
+                <button className="btn btn-primary btn-block-mobile" type="submit" style={{ minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                  📢 Publikasikan Pengumuman
+                </button>
               </div>
             </form>
           </div>
@@ -105,21 +107,21 @@ export default async function PengumumanPage({
 
       {items.map((p) => (
         <div className="card" key={String(p.id)}>
-          <div className="card-head">
-            <h2>{p.judul}</h2>
+          <div className="card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+            <h2 style={{ fontSize: "1.15rem", margin: 0 }}>{p.judul}</h2>
             <span className={`badge ${p.target === "SEMUA" ? "badge-yellow" : "badge-blue"}`}>
               {p.target === "SEMUA" ? "SEMUA PENGGUNA" : `KELAS ${p.class?.name ?? "ROMBEL"}`}
             </span>
           </div>
           <div className="card-body">
-            <p className="prose">{p.isi}</p>
-            <div className="meta" style={{ marginTop: 10, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <p className="prose" style={{ whiteSpace: "pre-line", wordBreak: "break-word" }}>{p.isi}</p>
+            <div className="meta" style={{ marginTop: 12, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
               <span>✍ Penulis: <b>{p.author.nama}</b> ({p.author.role})</span>
-              <span>· {new Date(p.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
+              <span>· 📅 {new Date(p.createdAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</span>
             </div>
             {(user.role === "ADMIN" || p.authorId === user.id) && (
-              <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--ink)" }}>
-                <DangerSubmit action={deleteAnnouncement} hidden={{ id: String(p.id) }} confirmText={`Hapus pengumuman "${p.judul}"?`}>
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px dashed var(--ink)", display: "flex", justifyContent: "flex-end" }}>
+                <DangerSubmit action={deleteAnnouncement} hidden={{ id: String(p.id) }} confirmText={`Hapus pengumuman "${p.judul}"?`} btnClass="btn btn-danger btn-sm btn-block-mobile">
                   🗑 Hapus Pengumuman
                 </DangerSubmit>
               </div>

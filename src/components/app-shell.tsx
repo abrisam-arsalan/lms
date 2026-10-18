@@ -26,10 +26,8 @@ export default async function AppShell({
 }) {
   const nav = NAV[user.role] ?? [];
   const isAdmin = user.role === "ADMIN";
-  const showBell = ["SISWA", "ORTU", "GURU"].includes(user.role);
-  const unread = showBell
-    ? await prisma.notification.count({ where: { userId: user.id, readAt: null } })
-    : 0;
+  const showBell = true;
+  const unread = await prisma.notification.count({ where: { userId: user.id, readAt: null } });
 
   return (
     <>
