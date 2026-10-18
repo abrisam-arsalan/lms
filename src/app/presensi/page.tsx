@@ -96,31 +96,18 @@ export default async function PresensiPage({
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, width: "100%" }}>
+                    <div className="attendance-options">
                       {(["HADIR", "SAKIT", "IZIN", "ALPHA"] as AttendanceStatus[]).map((st) => (
                         <label
                           key={st}
-                          className="pill"
-                          style={{
-                            cursor: "pointer",
-                            fontSize: 13,
-                            padding: "8px 4px",
-                            textAlign: "center",
-                            minHeight: 44,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            background: r.status === st ? "var(--yellow)" : "var(--card)",
-                            fontWeight: r.status === st ? "900" : "600",
-                            border: "2px solid var(--ink)",
-                          }}
+                          className="status-pill"
                         >
                           <input
                             type="radio"
                             name={`status_${r.studentId}`}
                             value={st}
                             defaultChecked={r.status === st}
-                            style={{ display: "none" }}
+                            style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
                           />
                           {st === "HADIR" && "✅ Hadir"}
                           {st === "SAKIT" && "🤒 Sakit"}
@@ -132,11 +119,11 @@ export default async function PresensiPage({
 
                     <input
                       className="input"
-                      style={{ width: "100%", fontSize: 13, minHeight: 42 }}
+                      style={{ width: "100%", fontSize: 13, minHeight: 44 }}
                       type="text"
                       name={`ket_${r.studentId}`}
                       defaultValue={r.keterangan}
-                      placeholder="Keterangan / alasan (opsional)..."
+                      placeholder="Keterangan / alasan izin / sakit (opsional)..."
                     />
                   </div>
                 </div>
@@ -249,16 +236,16 @@ export default async function PresensiPage({
                   </div>
                 </div>
 
-                <div>
+                <div style={{ width: "100%", maxWidth: "fit-content" }} className="btn-block-mobile">
                   {activeSession ? (
-                    <a className="btn btn-primary btn-sm" href={`/presensi?session=${activeSession.id}`}>
+                    <a className="btn btn-primary btn-sm btn-block-mobile" href={`/presensi?session=${activeSession.id}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                       📝 Lanjut Presensi ({activeSession.status})
                     </a>
                   ) : (
-                    <form action={openSession} style={{ display: "inline" }}>
+                    <form action={openSession} style={{ width: "100%" }}>
                       <input type="hidden" name="scheduleId" value={String(s.id)} />
                       <input type="hidden" name="date" value={todayStr} />
-                      <button className="btn btn-green btn-sm" type="submit">
+                      <button className="btn btn-green btn-sm btn-block-mobile" type="submit" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
                         ▶️ Buka Presensi
                       </button>
                     </form>
@@ -276,15 +263,18 @@ export default async function PresensiPage({
         </div>
         <div className="card-body">
           {schedules.length === 0 && <div className="empty">Belum ada jadwal mengajar yang diatur.</div>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: 12 }}>
             {schedules.map((s) => (
               <div
                 key={String(s.id)}
                 className="card"
-                style={{ margin: 0, padding: 12, background: s.day === todayDay ? "var(--bg-accent, #FFF9DB)" : undefined }}
+                style={{ margin: 0, padding: 14, background: s.day === todayDay ? "var(--bg-accent, #FFF9DB)" : undefined }}
               >
-                <b>{DAYS[s.day]}</b> · <span className="muted">{s.startTime}–{s.endTime}</span>
-                <div style={{ fontWeight: 800, fontSize: 15, marginTop: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <b>{DAYS[s.day]}</b>
+                  <span className="pill" style={{ fontSize: 11 }}>{s.startTime}–{s.endTime}</span>
+                </div>
+                <div style={{ fontWeight: 800, fontSize: 15, marginTop: 6 }}>
                   {s.assignment.class.name} — {s.assignment.subject.name}
                 </div>
                 <div className="meta" style={{ marginTop: 4 }}>
@@ -292,9 +282,9 @@ export default async function PresensiPage({
                 </div>
                 <form action={openSession} style={{ marginTop: 12 }}>
                   <input type="hidden" name="scheduleId" value={String(s.id)} />
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input type="date" name="date" defaultValue={todayStr} className="input" style={{ flex: 1, minHeight: 40, fontSize: 13, padding: "6px 8px" }} required />
-                    <button className="btn btn-sm btn-primary" type="submit" style={{ whiteSpace: "nowrap" }}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    <input type="date" name="date" defaultValue={todayStr} className="input" style={{ flex: "1 1 130px", minHeight: 44, fontSize: 13, padding: "6px 8px" }} required />
+                    <button className="btn btn-sm btn-primary" type="submit" style={{ whiteSpace: "nowrap", flex: "1 1 auto", minHeight: 44 }}>
                       Buka →
                     </button>
                   </div>

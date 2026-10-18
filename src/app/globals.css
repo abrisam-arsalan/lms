@@ -323,6 +323,52 @@ html, body {
   padding: 8px 14px;
 }
 
+/* Presensi: Status Pills & Touch Targets */
+.attendance-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+@media (max-width: 440px) {
+  .attendance-options {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+}
+.status-pill {
+  cursor: pointer;
+  font-size: 13px;
+  padding: 8px 6px;
+  text-align: center;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--card);
+  font-weight: 700;
+  border: 2px solid var(--ink);
+  box-shadow: 2px 2px 0 var(--ink);
+  border-radius: var(--radius);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.08s ease, background-color 0.1s ease;
+}
+.status-pill:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.status-pill:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.status-pill:has(input:checked) {
+  background: var(--yellow) !important;
+  font-weight: 900 !important;
+  border-width: 3px;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
 /* Mobile-friendly table wrappers & stat grids */
 @media (max-width: 639px) {
   .topbar {
