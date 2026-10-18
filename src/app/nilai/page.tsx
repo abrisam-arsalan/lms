@@ -44,18 +44,22 @@ export default async function NilaiPage({
             <h1>Ketercapaian TP &amp; Nilai Rapor 📊</h1>
             <p>Pilih mata pelajaran untuk melihat ketercapaian Tujuan Pembelajaran.</p>
           </div>
-          {assigns.map((x) => (
-            <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`} style={{ textDecoration: "none" }}>
-              <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-                <div>
-                  <h2>{x.subject.name}</h2>
-                  <span className="muted">Kelas {x.class.name}</span>
+          {!assigns.length && <div className="empty">Belum ada data mata pelajaran untuk kelas Anda.</div>}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {assigns.map((x) => (
+              <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`} style={{ textDecoration: "none", margin: 0 }}>
+                <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ flex: "1 1 200px" }}>
+                    <h2 style={{ fontSize: 17, marginBottom: 4 }}>{x.subject.name}</h2>
+                    <span className="muted">Kelas {x.class.name}</span>
+                  </div>
+                  <span className="btn btn-sm btn-primary btn-block-mobile" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
+                    Lihat Ketercapaian →
+                  </span>
                 </div>
-                <span className="btn btn-sm btn-primary">Lihat Ketercapaian →</span>
-              </div>
-            </a>
-          ))}
-          {!assigns.length && <div className="empty">Belum ada data mata pelajaran untuk kelasmu.</div>}
+              </a>
+            ))}
+          </div>
         </AppShell>
       );
     }
@@ -101,11 +105,11 @@ export default async function NilaiPage({
           <div className="card-head"><h2>Daftar Ketercapaian TP</h2></div>
           <div className="card-body">
             {tps.map((tp) => (
-              <div className="list-row" key={String(tp.id)}>
-                <div style={{ flex: 1 }}>
-                  <span className="pill">{tp.code}</span> <b>{tp.content}</b>
+              <div className="list-row" key={String(tp.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                <div style={{ flex: "1 1 200px" }}>
+                  <span className="pill">{tp.code}</span> <b style={{ marginLeft: 6 }}>{tp.content}</b>
                 </div>
-                <span className={`badge ${m.has(String(tp.id)) ? "badge-green" : "badge-neutral"}`} style={{ fontSize: 14 }}>
+                <span className={`badge ${m.has(String(tp.id)) ? "badge-green" : "badge-neutral"}`} style={{ fontSize: 14, minHeight: 36, display: "inline-flex", alignItems: "center", padding: "6px 12px" }}>
                   {m.has(String(tp.id)) ? `Skor: ${Math.round(m.get(String(tp.id))!)}` : "Belum Dinilai"}
                 </span>
               </div>
@@ -139,17 +143,21 @@ export default async function NilaiPage({
           <p>Pilih kelas dan mata pelajaran untuk melihat ketercapaian Tujuan Pembelajaran (TP) serta rekap nilai persiapan e-Rapor.</p>
         </div>
         {!assigns.length && <div className="empty">Belum ada kelas mengajar yang terdaftar untuk Anda pada semester ini.</div>}
-        {assigns.map((x) => (
-          <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`} style={{ textDecoration: "none" }}>
-            <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-              <div>
-                <h2>{x.class.name} · {x.subject.name}</h2>
-                <span className="muted">Guru Pengampu: {x.teacher?.nama ?? "—"}</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {assigns.map((x) => (
+            <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`} style={{ textDecoration: "none", margin: 0 }}>
+              <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+                <div style={{ flex: "1 1 200px" }}>
+                  <h2 style={{ fontSize: 17, marginBottom: 4 }}>{x.class.name} · {x.subject.name}</h2>
+                  <span className="muted">Guru Pengampu: {x.teacher?.nama ?? "—"}</span>
+                </div>
+                <span className="btn btn-sm btn-primary btn-block-mobile" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 44 }}>
+                  Buka Matriks Nilai →
+                </span>
               </div>
-              <span className="btn btn-sm btn-primary">Buka Matriks Nilai →</span>
-            </div>
-          </a>
-        ))}
+            </a>
+          ))}
+        </div>
       </AppShell>
     );
   }
@@ -204,10 +212,10 @@ export default async function NilaiPage({
             {err === "nilai" && <span className="error"> Nilai harus berupa angka 0–100.</span>}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <a className="btn btn-sm btn-primary" href={exportBase}>📥 Ekspor Excel ({asg.class.tingkat})</a>
-          <a className="btn btn-sm" href={`${exportBase}&fmt=csv`}>📥 Ekspor CSV</a>
-          <a className="btn btn-sm" href={`/tp/${assignmentId}`}>🎯 Atur TP</a>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", width: "100%", maxWidth: 460 }}>
+          <a className="btn btn-sm btn-primary btn-block-mobile" href={exportBase} style={{ flex: "1 1 120px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>📥 Ekspor Excel ({asg.class.tingkat})</a>
+          <a className="btn btn-sm btn-block-mobile" href={`${exportBase}&fmt=csv`} style={{ flex: "1 1 100px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>📥 Ekspor CSV</a>
+          <a className="btn btn-sm btn-block-mobile" href={`/tp/${assignmentId}`} style={{ flex: "1 1 90px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>🎯 Atur TP</a>
         </div>
       </div>
 
@@ -215,18 +223,18 @@ export default async function NilaiPage({
         <div className="card">
           <div className="card-head"><h2>⚙️ Rekapitulasi Nilai Otomatis</h2></div>
           <div className="card-body">
-            <div className="row-actions">
-              <form action={recalculate}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <form action={recalculate} style={{ flex: "1 1 auto" }}>
                 <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-                <button className="btn btn-sm btn-primary" type="submit">↻ Hitung Nilai TP &amp; Rapor Otomatis</button>
+                <button className="btn btn-primary btn-block-mobile" type="submit" style={{ minHeight: 44, width: "100%" }}>↻ Hitung Nilai TP &amp; Rapor Otomatis</button>
               </form>
-              <form action={recalculate}>
+              <form action={recalculate} style={{ flex: "1 1 auto" }}>
                 <input type="hidden" name="assignmentId" value={String(assignmentId)} />
                 <input type="hidden" name="force" value="1" />
-                <button className="btn btn-sm" type="submit">↻ Timpa Koreksi Manual</button>
+                <button className="btn btn-ghost btn-block-mobile" type="submit" style={{ minHeight: 44, width: "100%" }}>↻ Timpa Koreksi Manual</button>
               </form>
             </div>
-            <p className="muted" style={{ marginTop: 8 }}>
+            <p className="muted" style={{ marginTop: 10 }}>
               💡 Agregasi otomatis menghitung rata-rata nilai tugas/asesmen yang terhubung ke TP, kemudian menghasilkan rekomendasi nilai rapor.
             </p>
           </div>
@@ -234,8 +242,11 @@ export default async function NilaiPage({
       )}
 
       <div className="card">
-        <div className="card-head">
-          <h2>Matriks Ketercapaian TP &amp; Rapor</h2>
+        <div className="card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          <div>
+            <h2>Matriks Ketercapaian TP &amp; Rapor</h2>
+            <span className="muted" style={{ fontSize: 12, display: "block", marginTop: 4 }}>👉 <i>Geser tabel ke samping untuk melihat &amp; mengisi seluruh kolom TP.</i></span>
+          </div>
           <span className="pill">✋ TR = Perlu Peningkatan · ⭐ OP = Sangat Tercapai</span>
         </div>
         <div className="table-wrap">
@@ -329,7 +340,7 @@ export default async function NilaiPage({
                   </tr>
                 );
               })}
-              {!students.length && <tr><td colSpan={99}><div className="empty">Tidak ada siswa di rombel ini.</div></td></tr>}
+              {!students.length && <tr><td colSpan={99}><div className="empty">Belum ada siswa terdaftar di kelas ini.</div></td></tr>}
             </tbody>
           </table>
         </div>
@@ -337,22 +348,22 @@ export default async function NilaiPage({
 
       {canEdit && (
         <div className="card">
-          <div className="card-head"><h2>➕ Asesmen manual</h2><span className="pill">UH · praktik · nilai CBT</span></div>
+          <div className="card-head"><h2>➕ Asesmen Manual</h2><span className="pill">UH · Praktik · Nilai CBT</span></div>
           <div className="card-body">
-            <form action={addAssessment} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <form action={addAssessment} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "stretch", width: "100%" }}>
               <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-              <input className="input" style={{ width: 220 }} name="nama" placeholder="mis. UH Harian 2 / Nilai CBT UTS" required />
-              <select className="input" style={{ width: 170 }} name="tpId" defaultValue="">
+              <input className="input" style={{ flex: "1 1 200px", minHeight: 44 }} name="nama" placeholder="mis. UH Harian 2 / Nilai CBT UTS" required />
+              <select className="input" style={{ flex: "1 1 160px", minHeight: 44 }} name="tpId" defaultValue="">
                 <option value="">tanpa TP (rapor saja)</option>
                 {asg.learningTargets.map((tp) => <option key={String(tp.id)} value={String(tp.id)}>{tp.code}</option>)}
               </select>
-              <button className="btn btn-sm btn-primary">Tambah kolom</button>
+              <button className="btn btn-primary btn-block-mobile" type="submit" style={{ minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>+ Tambah Kolom</button>
             </form>
             {asg.manualAssessments.map((ma) => (
-              <div key={String(ma.id)} className="row-actions" style={{ marginTop: 8 }}>
+              <div key={String(ma.id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10, padding: "6px 0", borderBottom: "1px dashed var(--ink)" }}>
                 <span className="badge badge-blue">🖊 {ma.nama}{ma.tp ? ` → ${ma.tp.code}` : ""}</span>
                 <DangerSubmit action={deleteAssessment} hidden={{ id: String(ma.id) }}
-                  confirmText={`Hapus asesmen "${ma.nama}" beserta nilainya?`}>🗑</DangerSubmit>
+                  confirmText={`Hapus asesmen "${ma.nama}" beserta nilainya?`} btnClass="btn btn-danger btn-sm">🗑 Hapus</DangerSubmit>
               </div>
             ))}
           </div>
