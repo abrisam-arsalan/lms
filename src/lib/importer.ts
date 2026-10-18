@@ -1,14 +1,13 @@
 import { parseCsv, headerIdx } from "@/lib/csv";
 
-export type ImportKind = "siswa" | "guru" | "jadwal";
+export type ImportKind = "siswa" | "guru" | "jadwal" | "ortu";
 
 export interface RowPlan {
   line: number;      // nomor baris di file ( utk laporan )
   username: string;
   nama: string;
-  nis?: string;
-  nisn?: string;
-  nip?: string;
+  nisn?: string;     // siswa — wajib (dipakai sbg username)
+  nip?: string;      // guru — wajib (dipakai sbg username)
   rombel?: string;   // siswa / jadwal
   hari?: number;     // 0=Minggu .. 6=Sabtu
   hariText?: string;
@@ -17,6 +16,8 @@ export interface RowPlan {
   mapel?: string;
   guru?: string;
   ruang?: string;
+  anakNisn?: string; // ortu — NISN anak yang dihubungkan
+  hubungan?: string; // ortu — AYAH / IBU / WALI
   status: "OK" | "ERR";
   reason?: string;
 }
@@ -47,13 +48,15 @@ function normalizeTime(val: string): string | null {
 }
 
 /** CSV siswa — header minimal: nama, rombel; identitas: nisn atau nis (dipakai sbg username). */
+/** CSV siswa — header minimal: nisn, nama, rombel; NISN wajib dipakai sbg username. */
 export function planSiswa(text: string): { rows: RowPlan[]; problems: string[] } {
   const problems: string[] = [];
   const grid = parseCsv(text);
   if (!grid.length) return { rows: [], problems: ["File kosong."] };
   const h = headerIdx(grid[0]);
-  for (const k of ["nama", "rombel"]) {
-    if (h[k] === undefined && !(k === "nama" && h["nama siswa"] !== undefined)) problems.push(`Kolom '${k}' wajib ada di header.`);
+  for (const k of ["nisn", "nama", "rombel"]) {
+    if (h[k] === undefined && !(k === "nama" && h["nama siswa"] !== undefined))
+      problems.push(`Kolom '${k}' wajib ada di header.`);
   }
   if (problems.length) return { rows: [], problems };
   const namaCol = h["nama"] ?? h["nama siswa"];
@@ -65,16 +68,16 @@ export function planSiswa(text: string): { rows: RowPlan[]; problems: string[] }
     const nama = clean(r[namaCol] ?? "");
     const rombel = clean(r[rombelCol ?? -1] ?? "", 16).toUpperCase();
     const nisn = clean(r[h["nisn"] ?? -1] ?? "", 32);
-    const nis = clean(r[h["nis"] ?? -1] ?? "", 32);
-    const username = clean(r[h["username"] ?? -1] ?? "") || nisn || (nis ? `nis${nis}` : "");
+    const username = clean(r[h["username"] ?? -1] ?? "") || nisn;
     let status: RowPlan["status"] = "OK";
     let reason = "";
     if (!nama) { status = "ERR"; reason = "nama kosong"; }
-    else if (!rombel || !/^\d[A-Z]?$/.test(rombel)) { status = "ERR"; reason = `rombel '${rombel || "-"}' tidak valid (contoh: 9F)`; }
-    else if (!username) { status = "ERR"; reason = "butuh NISN atau NIS (dipakai sbg username)"; }
-    else if (seen.has(username)) { status = "ERR"; reason = "duplikat dalam file"; }
+    else if (!rombel || !/^\d[A-Z]?$/.test(rombel)) { status = "ERR"; reason = `rombel '${rombel || "-"}' tidak valid (contoh: 9A, 8B)`; }
+    else if (!nisn) { status = "ERR"; reason = "NISN wajib diisi (dipakai sebagai username siswa)"; }
+    else if (!username) { status = "ERR"; reason = "NISN wajib diisi (dipakai sebagai username siswa)"; }
+    else if (seen.has(username)) { status = "ERR"; reason = "NISN duplikat dalam file"; }
     if (status === "OK") seen.add(username);
-    rows.push({ line: i + 1, username, nama, nis: nis || undefined, nisn: nisn || undefined, rombel, status, reason: reason || undefined });
+    rows.push({ line: i + 1, username, nama, nisn: nisn || undefined, rombel, status, reason: reason || undefined });
   }
   return { rows, problems };
 }
@@ -192,6 +195,67 @@ export function planJadwal(text: string): { rows: RowPlan[]; problems: string[] 
       hariText: dayNum !== undefined ? HARI_NAMES[dayNum] : rawHari,
       startTime: startTime || rawMulai,
       endTime: endTime || rawSelesai,
+      status,
+      reason: reason || undefined,
+    });
+  }
+
+  return { rows, problems };
+}
+
+/** CSV orang tua — header minimal: nama, anak_nisn. Username opsional (default: P<anak_nisn>). */
+export function planOrtu(text: string): { rows: RowPlan[]; problems: string[] } {
+  const problems: string[] = [];
+  const grid = parseCsv(text);
+  if (!grid.length) return { rows: [], problems: ["File kosong."] };
+  const h = headerIdx(grid[0]);
+
+  const namaCol = h["nama"] ?? h["nama ortu"] ?? h["nama orang tua"];
+  const anakNisnCol = h["anak_nisn"] ?? h["nisn_anak"] ?? h["nisn anak"] ?? h["nisn"];
+  const usernameCol = h["username"];
+  const hubunganCol = h["hubungan"] ?? h["relasi"];
+
+  if (namaCol === undefined) problems.push("Kolom 'nama' wajib ada di header.");
+  if (anakNisnCol === undefined) problems.push("Kolom 'anak_nisn' (NISN anak) wajib ada di header.");
+  if (problems.length) return { rows: [], problems };
+
+  const seenUsername = new Set<string>();
+  const rows: RowPlan[] = [];
+
+  for (let i = 1; i < grid.length; i++) {
+    const r = grid[i];
+    const nama = clean(r[namaCol] ?? "");
+    const anakNisn = clean(r[anakNisnCol] ?? "", 32);
+    let username = usernameCol !== undefined ? clean(r[usernameCol] ?? "", 64) : "";
+    if (!username && anakNisn) username = `P${anakNisn}`;
+    const hubunganRaw = hubunganCol !== undefined ? clean(r[hubunganCol] ?? "", 20).toUpperCase() : "WALI";
+    const hubungan = ["AYAH", "IBU", "WALI"].includes(hubunganRaw) ? hubunganRaw : "WALI";
+
+    let status: RowPlan["status"] = "OK";
+    let reason = "";
+
+    if (!nama) {
+      status = "ERR";
+      reason = "nama orang tua kosong";
+    } else if (!anakNisn) {
+      status = "ERR";
+      reason = "NISN anak wajib diisi";
+    } else if (!username) {
+      status = "ERR";
+      reason = "username gagal dibuat";
+    } else if (seenUsername.has(username)) {
+      status = "ERR";
+      reason = "duplikat username / NISN anak dalam file";
+    }
+
+    if (status === "OK") seenUsername.add(username);
+
+    rows.push({
+      line: i + 1,
+      username,
+      nama,
+      anakNisn,
+      hubungan,
       status,
       reason: reason || undefined,
     });

@@ -9,7 +9,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireUser, logAudit } from "@/lib/auth";
 import { currentSemester } from "@/lib/academic";
-import { planSiswa, planGuru, planJadwal, type ImportKind } from "@/lib/importer";
+import { planSiswa, planGuru, planJadwal, planOrtu, type ImportKind } from "@/lib/importer";
 
 const IMPORT_DIR = path.resolve("storage/imports");
 
@@ -22,7 +22,7 @@ async function guard() {
 export async function uploadPreview(formData: FormData) {
   await guard();
   const rawKind = String(formData.get("kind") ?? "");
-  const kind: ImportKind = rawKind === "guru" ? "guru" : rawKind === "jadwal" ? "jadwal" : "siswa";
+  const kind: ImportKind = rawKind === "guru" ? "guru" : rawKind === "jadwal" ? "jadwal" : rawKind === "ortu" ? "ortu" : "siswa";
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) redirect("/admin/import?err=Kosong");
   if (file.size > 2 * 1024 * 1024) redirect("/admin/import?err=Maksimum+2MB");
@@ -32,6 +32,8 @@ export async function uploadPreview(formData: FormData) {
       ? planSiswa(text)
       : kind === "guru"
       ? planGuru(text)
+      : kind === "ortu"
+      ? planOrtu(text)
       : planJadwal(text);
   if (problems.length) redirect(`/admin/import?err=${encodeURIComponent(problems.join(" · "))}`);
   if (!rows.length) redirect("/admin/import?err=Tidak+ada+baris+data");
@@ -46,7 +48,7 @@ export async function commitImport(formData: FormData) {
   const admin = await guard();
   const rev = String(formData.get("rev") ?? "").replace(/[^0-9a-f]/g, "").slice(0, 32);
   const rawKind = String(formData.get("kind") ?? "");
-  const kind: ImportKind = rawKind === "guru" ? "guru" : rawKind === "jadwal" ? "jadwal" : "siswa";
+  const kind: ImportKind = rawKind === "guru" ? "guru" : rawKind === "jadwal" ? "jadwal" : rawKind === "ortu" ? "ortu" : "siswa";
   const tmpPass = String(formData.get("tmpPass") ?? "").trim() || "123456";
   const file = path.join(IMPORT_DIR, `${rev}.csv`);
   let text: string;
@@ -61,6 +63,8 @@ export async function commitImport(formData: FormData) {
       ? planSiswa(text)
       : kind === "guru"
       ? planGuru(text)
+      : kind === "ortu"
+      ? planOrtu(text)
       : planJadwal(text);
 
   const ctx = await currentSemester();
@@ -218,6 +222,43 @@ export async function commitImport(formData: FormData) {
       result.errors.push(`baris ${r.line}: ${r.reason}`);
       continue;
     }
+
+    if (kind === "ortu") {
+      const student = await prisma.user.findFirst({
+        where: { nisn: r.anakNisn!, role: "SISWA" },
+        select: { id: true, nama: true },
+      });
+      if (!student) {
+        result.skipped++;
+        result.errors.push(`baris ${r.line}: Siswa dengan NISN '${r.anakNisn}' tidak ditemukan.`);
+        continue;
+      }
+
+      let parentUser = await prisma.user.findUnique({ where: { username: r.username } });
+      if (!parentUser) {
+        parentUser = await prisma.user.create({
+          data: {
+            username: r.username,
+            nama: r.nama,
+            role: "ORTU",
+            passwordHash: hash,
+            mustChangePin: true,
+          },
+        });
+        result.created++;
+      } else {
+        result.existing++;
+      }
+
+      const rel = (r.hubungan === "AYAH" || r.hubungan === "IBU" || r.hubungan === "WALI") ? r.hubungan : "WALI";
+      await prisma.parentLink.upsert({
+        where: { parentId: parentUser.id },
+        create: { parentId: parentUser.id, childId: student.id, hubungan: rel },
+        update: { childId: student.id, hubungan: rel },
+      });
+      continue;
+    }
+
     const exist = await prisma.user.findUnique({ where: { username: r.username }, select: { id: true, nama: true } });
     if (exist) {
       result.existing++;
@@ -253,7 +294,6 @@ export async function commitImport(formData: FormData) {
           nama: r.nama,
           role: "SISWA",
           passwordHash: hash,
-          nis: r.nis || null,
           nisn: r.nisn || null,
           classId,
           mustChangePin: true,

@@ -29,7 +29,6 @@ export async function GET(req: NextRequest) {
     select: {
       id: true,
       nama: true,
-      nis: true,
       nisn: true,
       username: true,
       classRef: { select: { id: true, name: true, tingkat: true } },
@@ -42,7 +41,6 @@ export async function GET(req: NextRequest) {
     siswa: rows.map((s) => ({
       user_id: String(s.id),
       nama: s.nama,
-      nis: s.nis,
       nisn: s.nisn,
       username: s.username,
       rombel: s.classRef?.name ?? null,

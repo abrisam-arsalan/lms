@@ -92,7 +92,7 @@ export default async function PresensiPage({
                   <div style={{ width: "100%" }}>
                     <span style={{ fontWeight: 900, marginRight: 8, fontSize: 16 }}>{i + 1}.</span>
                     <b style={{ fontSize: 15 }}>{r.student.nama}</b>
-                    <div className="meta" style={{ marginTop: 2 }}>NISN: {r.student.nisn ?? "—"} · NIS: {r.student.nis ?? "—"}</div>
+                    <div className="meta" style={{ marginTop: 2 }}>NISN: {r.student.nisn ?? "—"}</div>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>

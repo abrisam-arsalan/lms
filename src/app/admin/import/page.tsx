@@ -3,16 +3,17 @@ import path from "node:path";
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import AppShell from "@/components/app-shell";
-import { planSiswa, planGuru, planJadwal, type ImportKind } from "@/lib/importer";
+import { planSiswa, planGuru, planJadwal, planOrtu, type ImportKind } from "@/lib/importer";
 import { uploadPreview, commitImport } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 const IMPORT_DIR = path.resolve("storage/imports");
 
-const TEMPLATE_SISWA = "nis,nisn,nama,rombel\n1001,0101306751,Andi Pratama,9A\n1002,0115115101,Bunga Citra Lestari,9A\n1003,0101306752,Cahyo Nugroho,8B\n1004,0115115102,Dewi Sartika,7A";
+const TEMPLATE_SISWA = "nisn,nama,rombel\n0101306751,Andi Pratama,9A\n0115115101,Bunga Citra Lestari,9A\n0101306752,Cahyo Nugroho,8B\n0115115102,Dewi Sartika,7A";
 const TEMPLATE_GURU = 'nip,nama,username\n198501012010011001,"Budi Santoso, S.Pd.",198501012010011001\n198803152015022002,"Siti Rahayu, M.Pd.",198803152015022002\n2026001,"Ahmad Fauzi, S.Si.",guru_fauzi';
 const TEMPLATE_JADWAL = "hari,jam_mulai,jam_selesai,rombel,mapel,guru,ruang\nSenin,07:30,08:50,9A,Matematika,198501012010011001,Ruang 9A\nSenin,09:05,10:25,9A,Bahasa Indonesia,2026001,Ruang 9A\nSelasa,07:30,08:50,9B,Bahasa Inggris,2026001,Lab Bahasa\nRabu,08:00,09:20,8A,IPA,198501012010011001,Lab IPA\nKamis,07:30,08:50,7B,Pendidikan Agama,guru,Ruang 7B\nJumat,07:30,08:50,9A,PJOK,guru,Lapangan";
+const TEMPLATE_ORTU = 'nama,anak_nisn,username,hubungan\n"Bapak Pratama",0115300001,P0115300001,AYAH\n"Ibu Lestari",0115300002,P0115300002,IBU\n"Bapak Nugroho",0115300003,P0115300003,AYAH\n"Ibu Sartika",0115300004,P0115300004,IBU\n"Bapak Firmansyah",0115300005,P0115300005,AYAH';
 
 export default async function AdminImportPage({
   searchParams,
@@ -21,7 +22,7 @@ export default async function AdminImportPage({
 }) {
   const me = await requireRole(["ADMIN"]);
   const { rev, kind, done, err } = await searchParams;
-  const k: ImportKind = kind === "guru" ? "guru" : kind === "jadwal" ? "jadwal" : "siswa";
+  const k: ImportKind = kind === "guru" ? "guru" : kind === "jadwal" ? "jadwal" : kind === "ortu" ? "ortu" : "siswa";
 
   // ── 1. HASIL IMPOR ──
   if (done) {
@@ -148,7 +149,7 @@ export default async function AdminImportPage({
     }
 
     const { rows, problems } =
-      k === "guru" ? planGuru(text) : k === "jadwal" ? planJadwal(text) : planSiswa(text);
+      k === "guru" ? planGuru(text) : k === "jadwal" ? planJadwal(text) : k === "ortu" ? planOrtu(text) : planSiswa(text);
     const okCount = rows.filter((r) => r.status === "OK").length;
 
     return (
@@ -189,6 +190,15 @@ export default async function AdminImportPage({
                     <th>Ruang</th>
                     <th>Status</th>
                   </tr>
+                ) : k === "ortu" ? (
+                  <tr>
+                    <th>#</th>
+                    <th>Username Ortu</th>
+                    <th>Nama Orang Tua</th>
+                    <th>NISN Anak</th>
+                    <th>Hubungan</th>
+                    <th>Status</th>
+                  </tr>
                 ) : (
                   <tr>
                     <th>#</th>
@@ -211,6 +221,13 @@ export default async function AdminImportPage({
                         <td>{r.mapel}</td>
                         <td>{r.guru}</td>
                         <td>{r.ruang || "—"}</td>
+                      </>
+                    ) : k === "ortu" ? (
+                      <>
+                        <td><code>{r.username}</code></td>
+                        <td><b>{r.nama}</b></td>
+                        <td><span className="badge badge-yellow">{r.anakNisn}</span></td>
+                        <td><span className="pill">{r.hubungan}</span></td>
                       </>
                     ) : (
                       <>
@@ -444,6 +461,54 @@ export default async function AdminImportPage({
                 • Kolom: <code>hari,jam_mulai,jam_selesai,rombel,mapel,guru,ruang</code>.<br />
                 • Format jam: <code>07:30</code>, <code>09:00</code>.<br />
                 • Kolom <code>guru</code> dapat berupa NIP, Username, atau Nama Guru.
+              </p>
+            </details>
+          </div>
+        </div>
+
+        {/* KARTU 4: ORANG TUA */}
+        <div className="card">
+          <div className="card-head">
+            <h2>👨‍👩‍👦 Impor Data Orang Tua</h2>
+            <span className="badge badge-yellow">TAUTAN SISWA VIA NISN</span>
+          </div>
+          <div className="card-body">
+            <p className="muted" style={{ marginBottom: 12 }}>
+              Mendukung pembuatan akun orang tua massal dan otomatis menghubungkannya ke anak via NISN siswa.
+            </p>
+
+            <div style={{ marginBottom: 16 }}>
+              <a
+                href="/api/templates/ortu"
+                download
+                className="btn btn-yellow"
+                style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}
+              >
+                📥 Unduh Template CSV Orang Tua
+              </a>
+            </div>
+
+            <form action={uploadPreview} encType="multipart/form-data" style={{ display: "grid", gap: 12 }}>
+              <input type="hidden" name="kind" value="ortu" />
+              <div className="field" style={{ margin: 0 }}>
+                <label className="field-label">Pilih Berkas CSV Orang Tua</label>
+                <input className="input" type="file" name="file" accept=".csv,text/csv" required />
+              </div>
+              <button className="btn btn-primary" type="submit" style={{ minHeight: 44 }}>
+                🔍 Pratinjau & Validasi Data Orang Tua →
+              </button>
+            </form>
+
+            <details style={{ marginTop: 14 }}>
+              <summary className="pill" style={{ cursor: "pointer", fontWeight: 700 }}>
+                📋 Contoh Format Isi CSV Orang Tua
+              </summary>
+              <pre className="prose muted" style={{ fontSize: 12, marginTop: 8, padding: 10, background: "#fff", border: "2px solid #000" }}>
+                {TEMPLATE_ORTU}
+              </pre>
+              <p className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                • Kolom wajib: <code>nama</code>, <code>anak_nisn</code>.<br />
+                • Kolom opsional: <code>username</code> (otomatis <code>P[NISN]</code> jika kosong), <code>hubungan</code> (AYAH/IBU/WALI).
               </p>
             </details>
           </div>

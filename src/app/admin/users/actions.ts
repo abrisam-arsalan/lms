@@ -29,7 +29,6 @@ export async function addUser(formData: FormData) {
   if (exists) back("?err=Username%20sudah%20dipakai");
 
   const hash = await bcrypt.hash(pass, 10);
-  const nis = clean(formData.get("nis"), 32) || null;
   const nisn = clean(formData.get("nisn"), 32) || null;
   const nip = clean(formData.get("nip"), 32) || null;
   const classId = BigInt(clean(formData.get("classId"), 20) || "0") || null;
@@ -40,7 +39,6 @@ export async function addUser(formData: FormData) {
       nama,
       role: role as never,
       passwordHash: hash,
-      nis: nis || null,
       nisn: nisn || null,
       nip: nip || null,
       classId: role === "SISWA" ? classId : null,
@@ -89,7 +87,6 @@ export async function editUser(formData: FormData) {
   const admin = await guardAdmin();
   const id = BigInt(clean(formData.get("id"), 20) || "0");
   const nama = clean(formData.get("nama"), 120);
-  const nis = clean(formData.get("nis"), 32) || null;
   const nisn = clean(formData.get("nisn"), 32) || null;
   const nip = clean(formData.get("nip"), 32) || null;
   const classId = BigInt(clean(formData.get("classId"), 20) || "0") || null;
@@ -102,7 +99,6 @@ export async function editUser(formData: FormData) {
     where: { id },
     data: {
       nama,
-      ...(nis !== null ? { nis } : {}),
       ...(nisn !== null ? { nisn } : {}),
       ...(nip !== null ? { nip } : {}),
       ...(u.role === "SISWA" && classId ? { classId } : {}),

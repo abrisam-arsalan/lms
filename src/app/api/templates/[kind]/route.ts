@@ -4,11 +4,11 @@ const TEMPLATES: Record<string, { filename: string; content: string }> = {
   siswa: {
     filename: "template_impor_siswa.csv",
     content:
-      "nis,nisn,nama,rombel\n" +
-      "1001,0101306751,Andi Pratama,9A\n" +
-      "1002,0115115101,Bunga Citra Lestari,9A\n" +
-      "1003,0101306752,Cahyo Nugroho,8B\n" +
-      "1004,0115115102,Dewi Sartika,7A\n",
+      "nisn,nama,rombel\n" +
+      "0101306751,Andi Pratama,9A\n" +
+      "0115115101,Bunga Citra Lestari,9A\n" +
+      "0101306752,Cahyo Nugroho,8B\n" +
+      "0115115102,Dewi Sartika,7A\n",
   },
   guru: {
     filename: "template_impor_guru.csv",
@@ -28,6 +28,16 @@ const TEMPLATES: Record<string, { filename: string; content: string }> = {
       "Rabu,08:00,09:20,8A,IPA,198501012010011001,Lab IPA\n" +
       "Kamis,07:30,08:50,7B,Pendidikan Agama,guru,Ruang 7B\n" +
       "Jumat,07:30,08:50,9A,PJOK,guru,Lapangan\n",
+  },
+  ortu: {
+    filename: "template_impor_ortu.csv",
+    content:
+      "nama,anak_nisn,username,hubungan\n" +
+      '"Bapak Pratama",0115300001,P0115300001,AYAH\n' +
+      '"Ibu Lestari",0115300002,P0115300002,IBU\n' +
+      '"Bapak Nugroho",0115300003,P0115300003,AYAH\n' +
+      '"Ibu Sartika",0115300004,P0115300004,IBU\n' +
+      '"Bapak Firmansyah",0115300005,P0115300005,AYAH\n',
   },
 };
 

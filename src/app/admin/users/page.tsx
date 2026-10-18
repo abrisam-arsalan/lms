@@ -61,12 +61,10 @@ export default async function AdminUsersPage({
                 <input className="input" name="nama" required /></div>
               <div className="field"><label className="field-label">PIN / Password sementara</label>
                 <input className="input" name="password" placeholder="123456" /></div>
-              <div className="field"><label className="field-label">NIS (siswa, opsional)</label>
-                <input className="input" name="nis" /></div>
-              <div className="field"><label className="field-label">NISN (siswa, opsional)</label>
-                <input className="input" name="nisn" /></div>
-              <div className="field"><label className="field-label">NIP (guru, opsional)</label>
-                <input className="input" name="nip" /></div>
+              <div className="field"><label className="field-label">NISN (wajib untuk siswa)</label>
+                <input className="input" name="nisn" placeholder="10 digit NISN" /></div>
+              <div className="field"><label className="field-label">NIP (wajib untuk guru)</label>
+                <input className="input" name="nip" placeholder="NIP guru" /></div>
               <div className="field"><label className="field-label">Rombel (siswa)</label>
                 <select className="input" name="classId" defaultValue="">
                   <option value="">— belum ada —</option>
@@ -121,8 +119,8 @@ export default async function AdminUsersPage({
                         <form action={editUser} style={{ marginTop: 6, display: "grid", gap: 6, minWidth: 220 }}>
                           <input type="hidden" name="id" value={String(u.id)} />
                           <input className="input" style={{ minHeight: 34 }} name="nama" defaultValue={u.nama} required />
-                          <input className="input" style={{ minHeight: 34 }} name="nis" defaultValue={u.nis ?? ""} placeholder="NIS" />
-                          <input className="input" style={{ minHeight: 34 }} name="nisn" defaultValue={u.nisn ?? ""} placeholder="NISN" />
+                          <input className="input" style={{ minHeight: 34 }} name="nisn" defaultValue={u.nisn ?? ""} placeholder="NISN (siswa)" />
+                          <input className="input" style={{ minHeight: 34 }} name="nip" defaultValue={u.nip ?? ""} placeholder="NIP (guru)" />
                           <select className="input" style={{ minHeight: 34 }} name="classId" defaultValue={u.classId ? String(u.classId) : ""}>
                             <option value="">rombel tetap</option>
                             {classes.map((k) => <option key={String(k.id)} value={String(k.id)}>{k.name}</option>)}
