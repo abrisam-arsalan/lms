@@ -1,12 +1,21 @@
 import { requireUser } from "@/lib/auth";
 import AppShell from "@/components/app-shell";
-import { launchCbt } from "./actions";
+import { getCbtExamsForUser, broadcastNewCbtExams } from "@/lib/cbt-sync";
+import { broadcastExamsAction, syncStudentsAction } from "./actions";
 
 export default async function UjianPortalPage() {
   const user = await requireUser();
   const cbtBaseUrl = process.env.CBT_BASE_URL || "http://localhost:8000";
-  const isStaff = user.role === "ADMIN" || user.role === "GURU" || user.role === "KEPSEK";
-  const targetUrl = isStaff ? `${cbtBaseUrl}/admin/login` : `${cbtBaseUrl}/login`;
+
+  // Cek & siarkan ujian baru di cbt_tka ke notifikasi/pengumuman secara otomatis
+  await broadcastNewCbtExams().catch(() => {});
+
+  // Ambil daftar ujian yang relevan bagi user
+  const exams = await getCbtExamsForUser(user);
+
+  const isStudent = user.role === "SISWA" || user.role === "ORTU";
+  const isTeacher = user.role === "GURU";
+  const isAdmin = user.role === "ADMIN";
 
   return (
     <AppShell user={user} active="/ujian">
@@ -15,64 +24,272 @@ export default async function UjianPortalPage() {
         <span className="sep">&gt;</span>
         <span className="current">Ujian CBT</span>
       </div>
-      <div className="page-head">
-        <h1>Platform Ujian &amp; Asesmen (CBT) 📋</h1>
-        <p>Akses ruang Computer Based Test (CBT) untuk pelaksanaan asesmen dan ujian sekolah.</p>
+
+      <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
+        <div>
+          <h1>Platform Ujian &amp; Asesmen (CBT) 📋</h1>
+          <p>Pelaksanaan asesmen formatif, sumatif, dan penyusunan bank soal Computer Based Test.</p>
+        </div>
+        {isAdmin && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <form action={broadcastExamsAction}>
+              <button className="btn btn-sm btn-yellow btn-block-mobile" type="submit" title="Siarkan ujian ke notifikasi dan pengumuman siswa">
+                📢 Siarkan Notifikasi Ujian
+              </button>
+            </form>
+            <form action={syncStudentsAction}>
+              <button className="btn btn-sm btn-primary btn-block-mobile" type="submit" title="Sinkronkan data siswa aktif ke database CBT">
+                👥 Sync Siswa ke CBT
+              </button>
+            </form>
+          </div>
+        )}
       </div>
 
-      <div className="card" style={{ maxWidth: 680 }}>
-        <div className="card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-          <h2>Buka Platform Ujian</h2>
-          <span className="badge badge-green">SERVER AKTIF (PORT 8000)</span>
-        </div>
-        <div className="card-body">
-          <p style={{ lineHeight: 1.6, fontSize: 15, marginBottom: 16 }}>
-            Engine Ujian CBT berjalan mandiri di server khusus untuk memastikan ujian tetap lancar, cepat, dan bebas gangguan.
-          </p>
+      {/* TAMPILAN SISWA & ORANG TUA */}
+      {isStudent && (
+        <>
+          <div className="card">
+            <div className="card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <h2>Daftar Jadwal Ujian Tersedia 🎯</h2>
+              <span className="badge badge-green">SERVER AKTIF (PORT 8000)</span>
+            </div>
+            <div className="card-body">
+              {exams.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {exams.map((ex) => (
+                    <div
+                      key={String(ex.id)}
+                      className="list-row"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 12,
+                        padding: "14px 16px",
+                        borderLeft: "6px solid var(--teal)",
+                        background: "rgba(13, 148, 136, 0.04)",
+                        marginBottom: 6,
+                      }}
+                    >
+                      <div style={{ flex: "1 1 280px" }}>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 6 }}>
+                          <b style={{ fontSize: 16 }}>{ex.title}</b>
+                          <span className="badge badge-yellow">⏱️ {ex.duration_minutes} Menit</span>
+                          {ex.class_name && <span className="pill">Kelas {ex.class_name}</span>}
+                          {ex.grade && <span className="pill">Jenjang Kelas {ex.grade}</span>}
+                          <span className="badge badge-green">SIAP DIKERJAKAN</span>
+                        </div>
+                        {ex.description && <p className="muted" style={{ fontSize: 14, margin: "4px 0" }}>{ex.description}</p>}
+                        <div className="meta" style={{ marginTop: 6, fontSize: 13 }}>
+                          📅 Pelaksanaan: {ex.start_at ? new Date(ex.start_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "Jadwal Aktif"}
+                        </div>
+                      </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
-            <div className="list-row" style={{ margin: 0, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-              <span>👤 <b>Akun Login:</b></span>
-              <span className="pill"><code>{user.username}</code> ({user.nama})</span>
-            </div>
-            <div className="list-row" style={{ margin: 0, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-              <span>🔑 <b>PIN / Sandi:</b></span>
-              <span className="meta">Gunakan PIN yang sama dengan portal (default: <code>123456</code>)</span>
-            </div>
-            <div className="list-row" style={{ margin: 0, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-              <span>🌐 <b>Alamat Server:</b></span>
-              <code style={{ fontSize: 13 }}>{cbtBaseUrl}</code>
+                      <div className="w-full-mobile" style={{ display: "flex", justifyContent: "flex-end" }}>
+                        <a
+                          className="btn btn-primary btn-block-mobile"
+                          href={`${cbtBaseUrl}/login`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                        >
+                          🚀 Masuk &amp; Kerjakan Ujian ↗
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty" style={{ padding: "24px 16px" }}>
+                  Belum ada jadwal ujian aktif untuk kelasmu saat ini. Silakan pantau pengumuman warta atau tunggu arahan dari guru pengampu.
+                </div>
+              )}
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <a
-              className="btn btn-primary btn-block-mobile"
-              href={targetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ fontSize: 16, padding: "12px 24px", minHeight: 48, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-            >
-              🚀 Buka Platform Ujian Sekarang ↗
-            </a>
-            {isStaff && (
-              <a
-                className="btn btn-block-mobile"
-                href={`${cbtBaseUrl}/login`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ fontSize: 15, minHeight: 48, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
-              >
-                Tampilan Login Siswa ↗
-              </a>
-            )}
+          <div className="card" style={{ maxWidth: 720 }}>
+            <div className="card-head">
+              <h2>Panduan Akses &amp; Akun Login Ujian Siswa 🔑</h2>
+            </div>
+            <div className="card-body">
+              <p style={{ lineHeight: 1.6, fontSize: 15, marginBottom: 16 }}>
+                Ujian dilaksanakan di sistem CBT mandiri agar koneksi tetap stabil selama pengerjaan soal. 
+                Saat membuka halaman ujian, Anda <b>tetap harus login ulang</b> menggunakan kredensial akun siswa Anda:
+              </p>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                <div className="list-row" style={{ margin: 0, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <span>👤 <b>Username Login Siswa:</b></span>
+                  <span className="pill"><code>{user.nisn || user.username}</code> (NISN Anda)</span>
+                </div>
+                <div className="list-row" style={{ margin: 0, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <span>🔑 <b>Password / PIN Siswa:</b></span>
+                  <span className="meta">Gunakan PIN yang sama dengan portal (default: <code>123456</code>)</span>
+                </div>
+                <div className="list-row" style={{ margin: 0, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                  <span>🌐 <b>Alamat Server Ujian CBT:</b></span>
+                  <code style={{ fontSize: 13 }}>{cbtBaseUrl}/login</code>
+                </div>
+              </div>
+
+              <div>
+                <a
+                  className="btn btn-primary btn-block-mobile"
+                  href={`${cbtBaseUrl}/login`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: 16, padding: "12px 24px", minHeight: 48, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                >
+                  🚀 Buka Halaman Login Ujian Siswa ↗
+                </a>
+              </div>
+
+              <div className="meta" style={{ marginTop: 16, fontSize: 13, borderTop: "1px dashed var(--ink)", paddingTop: 12 }}>
+                💡 <i>Tips: Halaman ujian akan terbuka di tab baru. Pastikan tidak menutup browser atau membuka tab lain selama ujian berlangsung (anti-cheat aktif).</i>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* TAMPILAN GURU & ADMIN */}
+      {!isStudent && (
+        <>
+          <div className="card">
+            <div className="card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <h2>Kelola Bank Soal &amp; Asesmen CBT Guru 📚</h2>
+              <span className="badge badge-green">SERVER CBT AKTIF</span>
+            </div>
+            <div className="card-body">
+              <p style={{ lineHeight: 1.6, fontSize: 15, marginBottom: 16 }}>
+                Bapak/Ibu Guru dapat menyusun dan mengimpor <b>Bank Soal</b> (Pilihan Ganda, PG Kompleks, Benar/Salah, dan Menjodohkan), 
+                mengatur jadwal ujian rombel, serta memantau pengerjaan siswa secara *real-time* di platform CBT.
+              </p>
+
+              <div className="alert alert-info" style={{ marginBottom: 20, padding: 14 }}>
+                🔒 <b>Ketentuan Login:</b> Ketika membuka halaman ujian di bawah, Anda <b>tetap harus login ulang</b> di sistem ujian menggunakan akun panitia/guru (default: username <code>admin</code> atau akun guru yang terdaftar).
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, marginBottom: 16 }}>
+                <div className="card" style={{ margin: 0, padding: 16, border: "2px solid var(--ink)" }}>
+                  <h3 style={{ fontSize: 16, marginBottom: 8 }}>📝 Pembuatan Bank Soal</h3>
+                  <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>Buat paket soal baru atau impor massal butir soal dari berkas Excel/CSV.</p>
+                  <a
+                    className="btn btn-primary btn-block-mobile"
+                    href={`${cbtBaseUrl}/admin/bank`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%", textDecoration: "none" }}
+                  >
+                    📚 Kelola Bank Soal ↗
+                  </a>
+                </div>
+
+                <div className="card" style={{ margin: 0, padding: 16, border: "2px solid var(--ink)" }}>
+                  <h3 style={{ fontSize: 16, marginBottom: 8 }}>📊 Monitoring &amp; Sesi Ujian</h3>
+                  <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>Pantau kehadiran siswa, sisa waktu, peringatan anti-cheat, dan submit.</p>
+                  <a
+                    className="btn btn-block-mobile"
+                    href={`${cbtBaseUrl}/admin/monitoring`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%", textDecoration: "none" }}
+                  >
+                    📋 Buka Monitoring Ujian ↗
+                  </a>
+                </div>
+
+                <div className="card" style={{ margin: 0, padding: 16, border: "2px solid var(--ink)" }}>
+                  <h3 style={{ fontSize: 16, marginBottom: 8 }}>📈 Rekap Hasil &amp; Unduh Nilai</h3>
+                  <p className="muted" style={{ fontSize: 14, marginBottom: 14 }}>Lihat analisis butir soal dan ekspor nilai ujian siswa dalam format Excel.</p>
+                  <a
+                    className="btn btn-block-mobile"
+                    href={`${cbtBaseUrl}/admin/hasil`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ minHeight: 42, display: "inline-flex", alignItems: "center", justifyContent: "center", width: "100%", textDecoration: "none" }}
+                  >
+                    📥 Lihat Rekap Nilai CBT ↗
+                  </a>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 8 }}>
+                <a
+                  className="btn btn-yellow btn-block-mobile"
+                  href={`${cbtBaseUrl}/admin/login`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                >
+                  🔑 Halaman Login Admin / Guru CBT ↗
+                </a>
+                <a
+                  className="btn btn-block-mobile"
+                  href={`${cbtBaseUrl}/login`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}
+                >
+                  Pratinjau Tampilan Login Siswa ↗
+                </a>
+              </div>
+            </div>
           </div>
 
-          <div className="meta" style={{ marginTop: 16, fontSize: 13, borderTop: "1px dashed var(--ink)", paddingTop: 12 }}>
-            💡 <i>Tips: Halaman ujian akan terbuka di tab baru. Anda dapat tetap membuka portal ini selama ujian berlangsung.</i>
+          <div className="card">
+            <div className="card-head">
+              <h2>Jadwal Ujian Aktif di Server CBT ({exams.length} Ujian)</h2>
+            </div>
+            <div className="card-body">
+              {exams.length > 0 ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {exams.map((ex) => (
+                    <div
+                      key={String(ex.id)}
+                      className="list-row"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                        gap: 12,
+                        padding: "12px 14px",
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+                          <b style={{ fontSize: 15 }}>{ex.title}</b>
+                          <span className="badge badge-yellow">⏱️ {ex.duration_minutes} Menit</span>
+                          {ex.class_name && <span className="pill">Kelas {ex.class_name}</span>}
+                          {ex.grade && <span className="pill">Jenjang {ex.grade}</span>}
+                          <span className="badge badge-green">{ex.status.toUpperCase()}</span>
+                        </div>
+                        <div className="meta" style={{ fontSize: 13 }}>
+                          Pelaksanaan: {ex.start_at ? new Date(ex.start_at).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "Aktif"} · {ex.description || "Tanpa deskripsi"}
+                        </div>
+                      </div>
+
+                      <a
+                        className="btn btn-sm btn-block-mobile"
+                        href={`${cbtBaseUrl}/admin/exams/${ex.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Detail Ujian di CBT ↗
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty">Belum ada ujian yang dibuat di CBT.</div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </AppShell>
   );
 }
