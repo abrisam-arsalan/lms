@@ -44,10 +44,10 @@ export default async function TpEditPage({
           <h1>TP — {assignment.class.name} · {assignment.subject.name}</h1>
           <p className="muted">Guru Pengampu: {assignment.teacher?.nama ?? "—"}</p>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <a className="btn btn-sm" href={`/materi?a=${assignmentId}`}>📖 Kelola Materi</a>
-          <a className="btn btn-sm" href={`/tugas?a=${assignmentId}`}>📝 Kelola Tugas</a>
-          <a className="btn btn-sm" href={`/nilai?a=${assignmentId}`}>📊 Buka Gradebook</a>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", width: "100%", maxWidth: 460 }}>
+          <a className="btn btn-sm btn-block-mobile" href={`/materi?a=${assignmentId}`} style={{ flex: "1 1 120px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>📖 Kelola Materi</a>
+          <a className="btn btn-sm btn-block-mobile" href={`/tugas?a=${assignmentId}`} style={{ flex: "1 1 120px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>📝 Kelola Tugas</a>
+          <a className="btn btn-sm btn-block-mobile" href={`/nilai?a=${assignmentId}`} style={{ flex: "1 1 120px", display: "inline-flex", alignItems: "center", justifyContent: "center", minHeight: 40 }}>📊 Buka Gradebook</a>
         </div>
       </div>
 
@@ -68,24 +68,24 @@ export default async function TpEditPage({
             <div className="form-grid two">
               <div className="field">
                 <label className="field-label">Kode TP (mis. TP.9220)</label>
-                <input className="input" name="code" placeholder="TP.1 / TP.9220" required />
+                <input className="input" name="code" placeholder="TP.1 / TP.9220" required style={{ minHeight: 44 }} />
               </div>
               <div className="field">
                 <label className="field-label">Isi / Capaian Pembelajaran</label>
-                <input className="input" name="content" placeholder="mis. Memahami perlindungan data pribadi dan privasi digital…" required />
+                <input className="input" name="content" placeholder="mis. Memahami konsep relasi dan fungsi matematika..." required style={{ minHeight: 44 }} />
               </div>
             </div>
-            <button className="btn btn-primary" type="submit">+ Simpan TP</button>
+            <button className="btn btn-primary btn-block-mobile" type="submit" style={{ minHeight: 44, marginTop: 4 }}>+ Simpan TP</button>
           </form>
-          <hr style={{ border: 0, borderTop: "2px dashed var(--ink)", margin: "16px 0" }} />
-          <p className="muted" style={{ marginBottom: 8 }}>
+          <hr style={{ border: 0, borderTop: "2px dashed var(--ink)", margin: "18px 0" }} />
+          <p className="muted" style={{ marginBottom: 10, fontSize: 13.5 }}>
             ⚡ <b>Salin Cepat dari Template e-Rapor:</b> Unggah file format import nilai rapor (format
             <i> "FORMAT IMPORT NILAI RAPOR … .xlsx"</i>) — kode &amp; deskripsi TP akan dibuat otomatis.
           </p>
-          <form action={importTpTemplate} style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+          <form action={importTpTemplate} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "stretch" }}>
             <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-            <input className="input" style={{ width: "auto", minWidth: 240 }} type="file" name="file" accept=".xlsx" required />
-            <button className="btn btn-sm btn-primary" type="submit">📥 Unggah &amp; Impor TP</button>
+            <input className="input" style={{ flex: "1 1 200px", maxWidth: "100%", minHeight: 44, padding: "8px 10px" }} type="file" name="file" accept=".xlsx" required />
+            <button className="btn btn-primary btn-block-mobile" type="submit" style={{ minHeight: 44, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>📥 Unggah &amp; Impor TP</button>
           </form>
         </div>
       </div>
@@ -100,43 +100,44 @@ export default async function TpEditPage({
             <div className="empty">Belum ada TP. Tambahkan secara manual di atas atau impor langsung dari file Excel e-Rapor.</div>
           )}
           {assignment.learningTargets.map((tp) => (
-            <div className="list-row" key={String(tp.id)}>
-              <div style={{ flex: 1, minWidth: 220 }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
+            <div className="list-row" key={String(tp.id)} style={{ display: "flex", flexDirection: "column", gap: 10, alignItems: "stretch" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span className="badge badge-blue">Urutan #{tp.urutan}</span>
                   <span className="pill" style={{ fontWeight: 900 }}>{tp.code}</span>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, margin: "4px 0" }}>{tp.content}</div>
-                <details style={{ marginTop: 8 }}>
-                  <summary className="btn btn-sm" style={{ cursor: "pointer", display: "inline-flex" }}>✏️ Ubah TP</summary>
-                  <form action={updateTp} style={{ marginTop: 10, maxWidth: 580 }}>
-                    <input type="hidden" name="id" value={String(tp.id)} />
-                    <input type="hidden" name="assignmentId" value={String(assignmentId)} />
-                    <div className="form-grid two">
-                      <div className="field">
-                        <label className="field-label">Kode TP</label>
-                        <input className="input" name="code" defaultValue={tp.code} required />
-                      </div>
-                      <div className="field">
-                        <label className="field-label">Nomor Urutan</label>
-                        <input className="input" name="urutan" type="number" min={0} defaultValue={tp.urutan} />
-                      </div>
+                <DangerSubmit
+                  action={deleteTp}
+                  hidden={{ id: String(tp.id), assignmentId: String(assignmentId) }}
+                  confirmText={`Hapus ${tp.code}? Materi dan tugas yang terhubung akan kehilangan tag TP ini.`}
+                  btnClass="btn btn-danger btn-sm"
+                >
+                  🗑 Hapus TP
+                </DangerSubmit>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, margin: "2px 0", lineHeight: 1.45 }}>{tp.content}</div>
+              <details style={{ marginTop: 4 }}>
+                <summary className="btn btn-sm" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", minHeight: 40 }}>✏️ Ubah TP</summary>
+                <form action={updateTp} style={{ marginTop: 12, maxWidth: 580 }}>
+                  <input type="hidden" name="id" value={String(tp.id)} />
+                  <input type="hidden" name="assignmentId" value={String(assignmentId)} />
+                  <div className="form-grid two">
+                    <div className="field">
+                      <label className="field-label">Kode TP</label>
+                      <input className="input" name="code" defaultValue={tp.code} required style={{ minHeight: 44 }} />
                     </div>
                     <div className="field">
-                      <label className="field-label">Deskripsi Capaian TP</label>
-                      <input className="input" name="content" defaultValue={tp.content} required />
+                      <label className="field-label">Nomor Urutan</label>
+                      <input className="input" name="urutan" type="number" min={0} defaultValue={tp.urutan} style={{ minHeight: 44 }} />
                     </div>
-                    <button className="btn btn-sm btn-primary" type="submit">Perbarui TP</button>
-                  </form>
-                </details>
-              </div>
-              <DangerSubmit
-                action={deleteTp}
-                hidden={{ id: String(tp.id), assignmentId: String(assignmentId) }}
-                confirmText={`Hapus ${tp.code}? Materi dan tugas yang terhubung akan kehilangan tag TP ini.`}
-              >
-                🗑 Hapus TP
-              </DangerSubmit>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">Deskripsi Capaian TP</label>
+                    <input className="input" name="content" defaultValue={tp.content} required style={{ minHeight: 44 }} />
+                  </div>
+                  <button className="btn btn-primary btn-block-mobile" type="submit" style={{ minHeight: 44, marginTop: 4 }}>Perbarui TP</button>
+                </form>
+              </details>
             </div>
           ))}
         </div>
