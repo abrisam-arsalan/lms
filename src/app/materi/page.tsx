@@ -114,9 +114,9 @@ export default async function MateriPage({
         </div>
         <div className="page-head">
           <h1>Kelola Materi Pembelajaran 📖</h1>
-          <p>Pilih rombel × mapel untuk mengelola materi{user.role === "KEPSEK" ? " (mode pantau)" : ""}.</p>
+          <p>Pilih kelas dan mata pelajaran untuk membuat atau membagikan materi pembelajaran{user.role === "KEPSEK" ? " (mode pantau)" : ""}.</p>
         </div>
-        {assigns.length === 0 && <div className="empty">Belum ada penugasan mengajar semester ini.</div>}
+        {assigns.length === 0 && <div className="empty">Belum ada kelas mengajar yang terdaftar untuk Anda pada semester ini.</div>}
         {assigns.map((x) => (
           <a className="card" key={String(x.id)} href={`/materi?a=${x.id}`} style={{ textDecoration: "none" }}>
             <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>

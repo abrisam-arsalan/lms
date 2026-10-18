@@ -136,9 +136,9 @@ export default async function NilaiPage({
         </div>
         <div className="page-head">
           <h1>Matriks Nilai &amp; Gradebook 📊</h1>
-          <p>Ketercapaian Tujuan Pembelajaran per rombel × mapel untuk persiapan e-Rapor.</p>
+          <p>Pilih kelas dan mata pelajaran untuk melihat ketercapaian Tujuan Pembelajaran (TP) serta rekap nilai persiapan e-Rapor.</p>
         </div>
-        {!assigns.length && <div className="empty">Belum ada penugasan mengajar semester ini.</div>}
+        {!assigns.length && <div className="empty">Belum ada kelas mengajar yang terdaftar untuk Anda pada semester ini.</div>}
         {assigns.map((x) => (
           <a className="card" key={String(x.id)} href={`/nilai?a=${x.id}`} style={{ textDecoration: "none" }}>
             <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>

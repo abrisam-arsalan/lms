@@ -189,9 +189,9 @@ export default async function TugasPage({
           </div>
           <div className="page-head">
             <h1>Kelola Tugas &amp; Penilaian 📝</h1>
-            <p>Pilih rombel × mapel untuk membuat tugas dan menilai pengumpulan siswa.</p>
+            <p>Pilih kelas dan mata pelajaran untuk membuat tugas baru atau memeriksa hasil pengumpulan siswa.</p>
           </div>
-          {assigns.length === 0 && <div className="empty">Belum ada penugasan mengajar semester ini.</div>}
+          {assigns.length === 0 && <div className="empty">Belum ada kelas mengajar yang terdaftar untuk Anda pada semester ini.</div>}
           {assigns.map((x) => (
             <a className="card" key={String(x.id)} href={`/tugas?a=${x.id}`} style={{ textDecoration: "none" }}>
               <div className="card-body" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>

@@ -73,7 +73,7 @@ export default async function PresensiPage({
             </div>
             <div className="card-body">
               {session.records.length === 0 && (
-                <div className="empty">Belum ada siswa terdaftar di rombel ini.</div>
+                <div className="empty">Belum ada siswa terdaftar di kelas ini.</div>
               )}
               {session.records.map((r, i) => (
                 <div

@@ -208,7 +208,7 @@ export default async function JadwalPage({
         </div>
         <div className="page-head">
           <h1>Jadwal Mengajar Mingguan 🗓️</h1>
-          <p>{my.length} rombel × mapel yang kamu ampu semester ini.</p>
+          <p>Jadwal tatap muka mingguan untuk {my.length} kelas yang Anda ajar pada semester ini.</p>
         </div>
         <WeekView rows={rows} today={today} />
       </AppShell>
@@ -230,7 +230,7 @@ export default async function JadwalPage({
       <div className="page-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
         <div>
           <h1>Jadwal Pelajaran Per Rombel 🗓️</h1>
-          <p>{user.role === "ADMIN" ? "Kelola" : "Pantau"} jadwal pelajaran per rombel × mapel.</p>
+          <p>{user.role === "ADMIN" ? "Kelola jadwal pelajaran mingguan untuk setiap kelas dan mata pelajaran." : "Pantau jadwal pelajaran mingguan di seluruh kelas."}</p>
         </div>
         {user.role === "ADMIN" && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

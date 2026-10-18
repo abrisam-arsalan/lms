@@ -2,17 +2,22 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { currentSemester, classAssignments, studentClassId, childrenOfClassIds, teacherAssignments } from "@/lib/academic";
 import { DAYS } from "@/lib/notify";
+import { NAV } from "@/lib/nav";
 import AppShell from "@/components/app-shell";
 
 const MODULES: { nama: string; href: string; desc: string; icon: string; status: string; roles: string[] }[] = [
   { nama: "Presensi", href: "/presensi", desc: "Isi absensi sesi mengajar hari ini", icon: "✅", status: "PRESENSI", roles: ["GURU", "ADMIN"] },
-  { nama: "Kehadiran", href: "/rekap-presensi", desc: "Pantau rekap kehadiran belajar", icon: "📅", status: "PRESENSI", roles: ["SISWA", "ORTU", "KEPSEK"] },
+  { nama: "Tujuan Pembelajaran", href: "/tp", desc: "Susun TP per kelas selaras e-Rapor", icon: "🎯", status: "LMS", roles: ["GURU", "ADMIN"] },
   { nama: "Materi Belajar", href: "/materi", desc: "Akses bahan ajar & modul", icon: "📖", status: "LMS", roles: ["GURU", "SISWA", "ORTU", "KEPSEK"] },
   { nama: "Tugas Siswa", href: "/tugas", desc: "Kumpulkan tugas & pantau nilai", icon: "📝", status: "LMS", roles: ["GURU", "SISWA"] },
   { nama: "Rekap Nilai TP", href: "/nilai", desc: "Ketercapaian TP & capaian rapor", icon: "📊", status: "LMS", roles: ["GURU", "SISWA", "ORTU", "KEPSEK"] },
-  { nama: "Jadwal Mingguan", href: "/jadwal", desc: "Jadwal pelajaran hari ini & pekan", icon: "🗓️", status: "TERPADU", roles: ["GURU", "SISWA", "ORTU", "KEPSEK", "ADMIN"] },
+  { nama: "Jadwal Pelajaran", href: "/jadwal", desc: "Jadwal pelajaran hari ini & pekan", icon: "🗓️", status: "TERPADU", roles: ["GURU", "SISWA", "ORTU", "KEPSEK", "ADMIN"] },
   { nama: "MPI Edukasi", href: "/mpi", desc: "Game interaktif & media belajar", icon: "🎮", status: "GAME", roles: ["GURU", "SISWA", "KEPSEK"] },
   { nama: "Ujian CBT", href: "/ujian", desc: "Platform asesmen & tes formatif", icon: "📋", status: "CBT", roles: ["GURU", "SISWA", "ORTU", "ADMIN"] },
+  { nama: "Kehadiran", href: "/rekap-presensi", desc: "Pantau rekap kehadiran belajar", icon: "📅", status: "PRESENSI", roles: ["SISWA", "ORTU", "KEPSEK"] },
+  { nama: "Kelola Akun", href: "/admin/users", desc: "Kelola akun guru, siswa, & ortu", icon: "👥", status: "ADMIN", roles: ["ADMIN"] },
+  { nama: "Master Data", href: "/admin/master", desc: "Rombel, mapel, & penugasan mengajar", icon: "🗂", status: "ADMIN", roles: ["ADMIN"] },
+  { nama: "Impor Data CSV", href: "/admin/import", desc: "Impor massal siswa, guru, jadwal, ortu", icon: "📥", status: "ADMIN", roles: ["ADMIN"] },
   { nama: "Pengumuman", href: "/pengumuman", desc: "Warta & agenda penting sekolah", icon: "📢", status: "INFO", roles: ["GURU", "SISWA", "ORTU", "KEPSEK", "ADMIN"] },
 ];
 
@@ -111,19 +116,19 @@ export default async function DashboardPage() {
         {user.role === "GURU" && (
           <p>
             {assignments > 0
-              ? `Kamu mengajar di ${assignments} rombel × mapel semester ini.`
-              : "Belum ada penugasan rombel — hubungi admin."}
+              ? `Anda mengampu ${assignments} kelas mata pelajaran pada semester ini.`
+              : "Belum ada jadwal kelas mengajar yang terdaftar — silakan hubungi bagian kurikulum / admin."}
           </p>
         )}
       </div>
 
       {guruSum && (guruSum.pending > 0 || guruSum.lewat.length > 0 || guruSum.dekat.length > 0 || !guruSum.punyaRombel) && (
         <div className="card">
-          <div className="card-head"><h2>📌 Perlu perhatianmu</h2><a className="pill" href="/tugas">ke Tugas →</a></div>
+          <div className="card-head"><h2>📌 Perlu Perhatian Anda</h2><a className="pill" href="/tugas">ke Tugas →</a></div>
           <div className="card-body">
             {!guruSum.punyaRombel && (
               <p className="alert alert-error" style={{ marginBottom: 10 }}>
-                Kamu belum punya penugasan rombel × mapel semester ini — minta admin membuatkan di <b>Master &amp; Assignmen</b>.
+                Anda belum memiliki jadwal kelas mengajar pada semester ini — silakan hubungi admin untuk pembagian tugas mengajar di menu <b>Master &amp; Penugasan</b>.
               </p>
             )}
             {guruSum.pending > 0 && (
@@ -205,21 +210,34 @@ export default async function DashboardPage() {
         <span className="pill">{user.role}</span>
       </div>
       <div className="grid">
-        {MODULES.filter((m) => m.roles.includes(user.role)).map((m) => (
-          <a className="card" key={m.nama} href={m.href} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div className="card-body">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                <span style={{ fontSize: 28 }}>{m.icon}</span>
-                <span className="badge badge-yellow">{m.status}</span>
+        {(() => {
+          const userNav = NAV[user.role] ?? [];
+          const navOrder = new Map(userNav.map((n, i) => [n.href, i]));
+          if (user.role === "ADMIN") {
+            const adminUjianIdx = userNav.findIndex((n) => n.href === "/admin/ujian");
+            if (adminUjianIdx !== -1) navOrder.set("/ujian", adminUjianIdx);
+          }
+          const userModules = MODULES.filter((m) => m.roles.includes(user.role)).sort((a, b) => {
+            const ordA = navOrder.has(a.href) ? navOrder.get(a.href)! : 999;
+            const ordB = navOrder.has(b.href) ? navOrder.get(b.href)! : 999;
+            return ordA - ordB;
+          });
+          return userModules.map((m) => (
+            <a className="card" key={m.nama} href={m.href} style={{ display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              <div className="card-body">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                  <span style={{ fontSize: 28 }}>{m.icon}</span>
+                  <span className="badge badge-yellow">{m.status}</span>
+                </div>
+                <h2 style={{ marginBottom: 4, fontSize: 16 }}>{m.nama}</h2>
+                <p className="muted" style={{ fontSize: 13 }}>{m.desc}</p>
               </div>
-              <h2 style={{ marginBottom: 4, fontSize: 16 }}>{m.nama}</h2>
-              <p className="muted" style={{ fontSize: 13 }}>{m.desc}</p>
-            </div>
-            <div style={{ padding: "0 16px 14px", textAlign: "right" }}>
-              <span style={{ fontWeight: 900, fontSize: 13 }}>Buka Modul →</span>
-            </div>
-          </a>
-        ))}
+              <div style={{ padding: "0 16px 14px", textAlign: "right" }}>
+                <span style={{ fontWeight: 900, fontSize: 13 }}>Buka Modul →</span>
+              </div>
+            </a>
+          ));
+        })()}
       </div>
     </AppShell>
   );
