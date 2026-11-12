@@ -10,10 +10,23 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!user) return deny(401, "Wajib login");
 
   const { id } = await params;
+  // Terima DUA format (kompatibilitas artefak lama & baru):
+  //   /api/file/m-12         (canonical)      /api/file/12?k=m  (lama)
+  // Mode lihat di portal:    /api/file/m-12?v=1 → inline utk pdf/gambar/teks saja.
+  let k = "";
+  let num = "";
   const m = id.match(/^([mts])-(\d+)$/);
-  if (!m) return deny(400, "Format ID tidak valid");
-  const [, k, num] = m;
+  if (m) {
+    k = m[1];
+    num = m[2];
+  } else {
+    const only = id.match(/^(\d+)$/);
+    const q = (req.nextUrl.searchParams.get("k") ?? "").slice(0, 1);
+    if (only && ["m", "t", "s"].includes(q)) { k = q; num = only[1]; }
+  }
+  if (!k || !num) return deny(400, "Format ID tidak valid");
   const bid = BigInt(num);
+  const wantView = req.nextUrl.searchParams.get("v") === "1";
 
   let storedName = "";
   let nama = "";
@@ -70,13 +83,21 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const buf = await readStored(storedName);
     const ascii = nama.replace(/[^\x20-\x7E]/g, "_").replace(/"/g, "");
-    return new NextResponse(new Uint8Array(buf), {
-      headers: {
-        "Content-Type": mime,
-        "Content-Disposition": `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nama)}`,
-        "Cache-Control": "private, max-age=300",
-      },
-    });
+    const { previewKind, canInlineServe } = await import("@/lib/fileview");
+    const inline = wantView && canInlineServe(previewKind(nama, mime));
+    const headers: Record<string, string> = {
+      "Content-Type": mime || "application/octet-stream",
+      "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(nama)}`,
+      "Cache-Control": "private, max-age=300",
+      "X-Content-Type-Options": "nosniff",
+    };
+    if (inline) {
+      // iframe/pdf/txt: sandbox tanpa skrip + hanya bisa di-embed halaman kita sendiri
+      headers["Content-Security-Policy"] =
+        "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; font-src 'self'; sandbox";
+      headers["X-Frame-Options"] = "SAMEORIGIN";
+    }
+    return new NextResponse(new Uint8Array(buf), { headers });
   } catch {
     return deny(404, "Berkas di server tidak ditemukan");
   }

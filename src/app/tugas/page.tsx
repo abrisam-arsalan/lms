@@ -7,6 +7,7 @@ import {
 } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
+import FileViewer from "@/components/file-viewer";
 import { createTask, deleteTask, uploadTaskFile, submitTask, gradeSubmission, markCompletedByTeacher, updateTask } from "./actions";
 
 const fmt = (d: Date | null) =>
@@ -88,9 +89,9 @@ export default async function TugasPage({
             <div className="card-body">
               <p className="prose">{task.instruksi}</p>
               {task.files.length > 0 && (
-                <div style={{ marginTop: 10 }}>
+                <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {task.files.map((f) => (
-                    <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=t`}>📎 {f.nama}</a>
+                    <FileViewer key={String(f.id)} kind="t" id={String(f.id)} nama={f.nama} mime={f.mime} sizeBytes={Number(f.sizeBytes)} />
                   ))}
                 </div>
               )}
@@ -126,7 +127,7 @@ export default async function TugasPage({
                       {s.text && <p className="prose" style={{ marginTop: 8, fontSize: 14 }}>{s.text}</p>}
                       <div style={{ margin: "8px 0", display: "flex", flexWrap: "wrap", gap: 6 }}>
                         {s.files.map((f) => (
-                          <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=s`} style={{ margin: 0, minHeight: 38, display: "inline-flex", alignItems: "center" }}>📎 {f.nama}</a>
+                          <FileViewer key={String(f.id)} kind="s" id={String(f.id)} nama={f.nama} mime={f.mime} sizeBytes={Number(f.sizeBytes)} />
                         ))}
                       </div>
                       <form action={gradeSubmission} style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginTop: 10, paddingTop: 10, borderTop: "1px dashed var(--ink)", width: "100%" }}>
@@ -424,7 +425,7 @@ export default async function TugasPage({
             {task.files.length > 0 && (
               <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {task.files.map((f) => (
-                  <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=t`} style={{ margin: 0, minHeight: 38, display: "inline-flex", alignItems: "center" }}>📎 {f.nama}</a>
+                  <FileViewer key={String(f.id)} kind="t" id={String(f.id)} nama={f.nama} mime={f.mime} sizeBytes={Number(f.sizeBytes)} />
                 ))}
               </div>
             )}
@@ -476,7 +477,7 @@ export default async function TugasPage({
               {sub?.files && sub.files.length > 0 && (
                 <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {sub.files.map((f) => (
-                    <a key={String(f.id)} className="filechip" href={`/api/file/${f.id}?k=s`} style={{ margin: 0, minHeight: 38, display: "inline-flex", alignItems: "center" }}>📎 {f.nama}</a>
+                    <FileViewer key={String(f.id)} kind="s" id={String(f.id)} nama={f.nama} mime={f.mime} sizeBytes={Number(f.sizeBytes)} />
                   ))}
                 </div>
               )}

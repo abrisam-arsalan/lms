@@ -26,7 +26,11 @@ export async function createMateri(formData: FormData) {
   const body = String(formData.get("body") ?? "").trim();
   const status = formData.get("status") === "TERBIT" ? "TERBIT" : "DRAF";
   const tpId = clean(formData.get("tpId"), 20);
-  if (!judul || !body) back(assignmentId);
+  const files = formData.getAll("files").filter((x): x is File => x instanceof File && x.size > 0).slice(0, 3);
+  // wajib judul + (isi ATAU minimal satu lampiran)
+  if (!judul || (!body && files.length === 0)) back(assignmentId);
+  const terlalu = files.some((f) => f.size > 20 * 1024 * 1024);
+  if (terlalu) redirect(`/materi?a=${assignmentId}&err=Ukuran+maks+20MB`);
 
   const max = await prisma.material.aggregate({
     where: { assignmentId },
@@ -44,7 +48,27 @@ export async function createMateri(formData: FormData) {
       ...(tpId ? { tpId: BigInt(tpId) } : {}),
     },
   });
-  await logAudit({ userId: user.id, action: "MATERI_BARU", entity: "materials", entityId: String(m.id) });
+
+  // simpan lampiran langsung saat pembuatan
+  for (const f of files) {
+    const bytes = Buffer.from(await f.arrayBuffer());
+    try {
+      const stored = await saveFile(bytes, f.name || "file");
+      await prisma.materialFile.create({
+        data: {
+          materialId: m.id,
+          nama: (f.name || "file").slice(0, 255),
+          storedName: stored.storedName,
+          mime: f.type || "application/octet-stream",
+          sizeBytes: BigInt(f.size),
+        },
+      });
+    } catch {
+      // lewati file bermasalah (ekstensi tak diizinkan, dsb.) — materi tetap terbentuk
+    }
+  }
+
+  await logAudit({ userId: user.id, action: "MATERI_BARU", entity: "materials", entityId: String(m.id), detail: { lampiran: files.length } });
   if (status === "TERBIT") await notifyMateri(assignmentId, judul);
   revalidatePath(`/materi`);
   back(assignmentId);

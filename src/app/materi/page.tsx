@@ -7,6 +7,7 @@ import {
 } from "@/lib/academic";
 import AppShell from "@/components/app-shell";
 import DangerSubmit from "@/components/danger-submit";
+import FileViewer from "@/components/file-viewer";
 import { createMateri, updateMateri, deleteMateri, uploadMateriFile, deleteMateriFile, markRead } from "./actions";
 
 const fmt = (d: Date | null) => (d ? new Date(d).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—");
@@ -70,13 +71,13 @@ export default async function MateriPage({
             <div className="card-body">
               {m.tp && <p className="muted" style={{ marginBottom: 6 }}><span className="pill">{m.tp.code}</span> {m.tp.content}</p>}
               <p className="prose">{m.body}</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
-                {m.files.map((f) => (
-                  <a className="filechip" key={String(f.id)} href={`/api/file/${f.id}?k=m`} title={size(f.sizeBytes)} style={{ margin: 0, minHeight: 40, display: "inline-flex", alignItems: "center" }}>
-                    📎 {f.nama}
-                  </a>
-                ))}
-              </div>
+              {m.files.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+                  {m.files.map((f) => (
+                    <FileViewer key={String(f.id)} kind="m" id={String(f.id)} nama={f.nama} mime={f.mime} sizeBytes={Number(f.sizeBytes)} />
+                  ))}
+                </div>
+              )}
               <div style={{ marginTop: 12 }}>
                 {myReads.has(String(m.id)) ? (
                   <span className="badge badge-green" style={{ minHeight: 36, display: "inline-flex", alignItems: "center", padding: "6px 12px" }}>✓ Sudah Dibaca</span>
@@ -179,7 +180,7 @@ export default async function MateriPage({
         <div className="card">
           <div className="card-head"><h2>➕ Tambah Materi Baru</h2></div>
           <div className="card-body">
-            <form action={createMateri}>
+            <form action={createMateri} encType="multipart/form-data">
               <input type="hidden" name="assignmentId" value={String(assignmentId)} />
               <div className="field">
                 <label className="field-label">Judul Materi</label>
@@ -204,8 +205,12 @@ export default async function MateriPage({
                 </div>
               </div>
               <div className="field">
-                <label className="field-label">Isi Materi Pembelajaran</label>
+                <label className="field-label">Isi Materi Pembelajaran <span className="muted">(boleh kosong bila langsung lampirkan berkas)</span></label>
                 <textarea className="input" name="body" rows={6} placeholder="Tulis teks materi, rangkuman, atau instruksi belajar…" />
+              </div>
+              <div className="field">
+                <label className="field-label">📎 Lampiran (PDF/gambar/Office, maks 3 file — siswa bisa membacanya langsung di portal)</label>
+                <input className="input" type="file" name="files" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style={{ minHeight: 44, padding: "8px 10px" }} />
               </div>
               <button className="btn btn-primary btn-block-mobile" type="submit" style={{ minHeight: 44, marginTop: 4 }}>Simpan &amp; Terbitkan Materi</button>
             </form>
@@ -230,7 +235,7 @@ export default async function MateriPage({
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, margin: "10px 0" }}>
               {m.files.map((f) => (
                 <span key={String(f.id)} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                  <a className="filechip" href={`/api/file/${f.id}?k=m`} style={{ margin: 0, minHeight: 40, display: "inline-flex", alignItems: "center" }}>📎 {f.nama} ({size(f.sizeBytes)})</a>
+                  <FileViewer kind="m" id={String(f.id)} nama={f.nama} mime={f.mime} sizeBytes={Number(f.sizeBytes)} />
                   {!ro && (
                     <DangerSubmit
                       action={deleteMateriFile}
