@@ -28,12 +28,12 @@
       "namedRegex": "^/api/file/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
-      "page": "/api/file/[id]/preview",
-      "regex": "^/api/file/([^/]+?)/preview(?:/)?$",
+      "page": "/api/templates/[kind]",
+      "regex": "^/api/templates/([^/]+?)(?:/)?$",
       "routeKeys": {
-        "nxtPid": "nxtPid"
+        "nxtPkind": "nxtPkind"
       },
-      "namedRegex": "^/api/file/(?<nxtPid>[^/]+?)/preview(?:/)?$"
+      "namedRegex": "^/api/templates/(?<nxtPkind>[^/]+?)(?:/)?$"
     },
     {
       "page": "/tp/[assignmentId]",
@@ -70,10 +70,22 @@
       "namedRegex": "^/admin/master(?:/)?$"
     },
     {
+      "page": "/admin/ujian",
+      "regex": "^/admin/ujian(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/ujian(?:/)?$"
+    },
+    {
       "page": "/admin/users",
       "regex": "^/admin/users(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/admin/users(?:/)?$"
+    },
+    {
+      "page": "/change-pin",
+      "regex": "^/change\\-pin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/change\\-pin(?:/)?$"
     },
     {
       "page": "/dashboard",
@@ -106,6 +118,12 @@
       "namedRegex": "^/materi(?:/)?$"
     },
     {
+      "page": "/mpi",
+      "regex": "^/mpi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/mpi(?:/)?$"
+    },
+    {
       "page": "/nilai",
       "regex": "^/nilai(?:/)?$",
       "routeKeys": {},
@@ -124,6 +142,18 @@
       "namedRegex": "^/pengumuman(?:/)?$"
     },
     {
+      "page": "/presensi",
+      "regex": "^/presensi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/presensi(?:/)?$"
+    },
+    {
+      "page": "/rekap-presensi",
+      "regex": "^/rekap\\-presensi(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/rekap\\-presensi(?:/)?$"
+    },
+    {
       "page": "/tp",
       "regex": "^/tp(?:/)?$",
       "routeKeys": {},
@@ -134,6 +164,12 @@
       "regex": "^/tugas(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/tugas(?:/)?$"
+    },
+    {
+      "page": "/ujian",
+      "regex": "^/ujian(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/ujian(?:/)?$"
     }
   ],
   "dataRoutes": [],
