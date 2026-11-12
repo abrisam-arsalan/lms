@@ -19,15 +19,18 @@
     "@prisma/client": "^6.3.0",
     "bcryptjs": "^2.4.3",
     "exceljs": "^4.4.0",
+    "mammoth": "^1.13.0",
     "next": "^15.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "sanitize-html": "^2.18.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/sanitize-html": "^2.16.2",
     "prisma": "^6.3.0",
     "typescript": "^5.7.0"
   },

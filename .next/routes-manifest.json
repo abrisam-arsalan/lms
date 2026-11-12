@@ -28,6 +28,14 @@
       "namedRegex": "^/api/file/(?<nxtPid>[^/]+?)(?:/)?$"
     },
     {
+      "page": "/api/file/[id]/preview",
+      "regex": "^/api/file/([^/]+?)/preview(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/file/(?<nxtPid>[^/]+?)/preview(?:/)?$"
+    },
+    {
       "page": "/tp/[assignmentId]",
       "regex": "^/tp/([^/]+?)(?:/)?$",
       "routeKeys": {

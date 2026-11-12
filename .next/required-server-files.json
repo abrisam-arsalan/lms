@@ -100,7 +100,7 @@
         "transform": "lodash/{{member}}"
       }
     },
-    "outputFileTracingRoot": "C:\\Users\\R.A.M\\AppData\\Roaming\\CherryStudio\\Data\\Agents\\system\\2026-09-30\\f9a957bb-9b0e-45fb-8287-098ba71203b0\\lms",
+    "outputFileTracingRoot": "D:\\Backup Download\\Aplikasi\\Qwen\\lms",
     "experimental": {
       "useSkewCookie": false,
       "cacheLife": {
@@ -294,10 +294,10 @@
       ]
     },
     "turbopack": {
-      "root": "C:\\Users\\R.A.M\\AppData\\Roaming\\CherryStudio\\Data\\Agents\\system\\2026-09-30\\f9a957bb-9b0e-45fb-8287-098ba71203b0\\lms"
+      "root": "D:\\Backup Download\\Aplikasi\\Qwen\\lms"
     }
   },
-  "appDir": "C:\\Users\\R.A.M\\AppData\\Roaming\\CherryStudio\\Data\\Agents\\system\\2026-09-30\\f9a957bb-9b0e-45fb-8287-098ba71203b0\\lms",
+  "appDir": "D:\\Backup Download\\Aplikasi\\Qwen\\lms",
   "relativeAppDir": "",
   "files": [
     ".next\\routes-manifest.json",
